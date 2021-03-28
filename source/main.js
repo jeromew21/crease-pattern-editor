@@ -299,6 +299,8 @@ class Canvas {
             var obj = this.objects[i];
             obj.draw(this.context, this.offset, this.zoom);
         }
+        // draw lines between circles that "touch"!!!
+        // get arrow key input for panning and resizing
         if (this.grid.enabled) {
             this.drawGrid();
         }

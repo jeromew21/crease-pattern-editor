@@ -4,9 +4,19 @@
 
 Circle Packing
 
-Editing
+### Hopeful features
 
-## Technical Overview
+Angle editing
+
+Grid snapping
+
+Full crease pattern generation 
+
+## Motivation
+
+Certain subsets of origami design can be pretty much completely formalized and automated. [Origami Design Secrets](https://www.amazon.com/Origami-Design-Secrets-Mathematical-Methods/dp/1568814364) is the English-speaking world's foremost resource for this, and as I go through some of the techniques beg for an easy-to-use implementation
+
+## Techinical overview
 
 ### Why Javascript?
 
