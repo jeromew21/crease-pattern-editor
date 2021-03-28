@@ -14,7 +14,7 @@ Full crease pattern generation
 
 ## Motivation
 
-Certain subsets of origami design can be pretty much completely formalized and automated. [Origami Design Secrets](https://www.amazon.com/Origami-Design-Secrets-Mathematical-Methods/dp/1568814364) is the English-speaking world's foremost resource for this, and as I go through some of the techniques beg for an easy-to-use implementation
+Certain subsets of origami design can be pretty much completely formalized and automated. _[Origami Design Secrets](https://www.amazon.com/Origami-Design-Secrets-Mathematical-Methods/dp/1568814364)_ by Robert J. Lang is the English-speaking world's foremost resource for origami theory. Many of the techniques presented in the book beg for an easy-to-use implementation.
 
 ## Techinical overview
 
