@@ -1,7 +1,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: aliceblue;
+    background-color: #a4b0be;
 }
 
 html {
@@ -10,16 +10,17 @@ html {
 }
 
 #canvas-main {
-    background-color: gray;
+    background-color: #a4b0be;
 }
 
 .div-ui {
-    background-color: gray;
+    background-color: #ced6e0;
     font-family: inherit;
     margin-top: 1em;
     margin-bottom: 1em;
     padding-top: 1em;
     padding-bottom: 1em;
+    border: 1px solid black;
 }
 
 .div-ui div {

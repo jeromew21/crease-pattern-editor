@@ -1,4 +1,22 @@
 const dragRatio = 1;
+const moveVelocity = 1;
+
+var keyRegister = {
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+    q: false,
+    e: false
+};
+
+document.onkeydown = function (e) {
+    keyRegister[e.key] = true;
+}
+
+document.onkeyup = function (e) {
+    keyRegister[e.key] = false;
+}
 
 function inBounds(coords, boundingRect) {
     var x = coords.x;
@@ -45,19 +63,20 @@ class Square {
 
     draw(ctx, offset, zoom) {
         const w = this.size * zoom;
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#f1f2f6';
         ctx.strokeStyle = '#000000'
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.fillRect(this.x + offset.x, this.y + offset.y, w, w);
         ctx.stroke();
+        ctx.lineWidth = 0.5;
         ctx.strokeRect(this.x + offset.x, this.y + offset.y, w, w);
     }
 }
 
 class Circle {
     static circleCount = 0;
-    static pink = "#FF0000";
+    static pink = "#ff4757";
     static black = "#000000"
 
     constructor(x, y, r, parent) {
@@ -66,7 +85,8 @@ class Circle {
         this.radius = r;
         this.parent = parent;
         this.name_ = "circle " + Circle.circleCount;
-        this.color = Circle.black;
+        this.color = Circle.black
+        this.isSelected = false;
         Circle.circleCount += 1;
     }
 
@@ -99,7 +119,11 @@ class Circle {
     }
 
     draw(ctx, offset, zoom) {
-        ctx.lineWidth = 2;
+        if (this.isSelected) {
+            ctx.lineWidth = 2;
+        } else {
+            ctx.lineWidth = 1;
+        }
         ctx.strokeStyle = this.color;
         ctx.fillStyle = this.color;
 
@@ -108,7 +132,7 @@ class Circle {
         ctx.arc(this.x + offset.x, this.y + offset.y, r, 0, 2 * Math.PI);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(this.x + offset.x, this.y + offset.y, r/20, 0, 2 * Math.PI);
+        ctx.arc(this.x + offset.x, this.y + offset.y, 1, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     }
@@ -186,15 +210,15 @@ class Canvas {
             line: {
                 window: $("#ui-line-inspector")
             },
-            angle: {
-                window: $("#ui-angle-inspector")
+            tile: {
+                window: $("#ui-tile-inspector")
             }
         };
 
         this.selectedObject = null;
 
         this.ui.circle.window.hide();
-        this.ui.angle.window.hide();
+        this.ui.tile.window.hide();
         this.ui.line.window.hide();
 
         $("html").css("cursor", "default");
@@ -247,7 +271,7 @@ class Canvas {
 
     hideWindows() {
         this.ui.circle.window.hide();
-        this.ui.angle.window.hide();
+        this.ui.tile.window.hide();
         this.ui.line.window.hide();
     }
 
@@ -256,6 +280,7 @@ class Canvas {
         var squareSize = this.square.size;
         var stepSize = this.square.size / self.grid.count;
         var overflowAmt = 500;
+        this.context.strokeStyle = "#000000";
         this.context.lineWidth = 0.5;
         this.context.beginPath();
         for (var i = -stepSize * 10; i < this.square.size + stepSize * 10; i += stepSize) {
@@ -291,6 +316,55 @@ class Canvas {
         }
     }
 
+    handleKeys() {
+        if (this.selectedObject != null) {
+            if (keyRegister.w) {
+                this.selectedObject.y -= moveVelocity;
+            }
+            if (keyRegister.s) {
+                this.selectedObject.y += moveVelocity;
+            }
+            if (keyRegister.d) {
+                this.selectedObject.x += moveVelocity;
+            }
+            if (keyRegister.a) {
+                this.selectedObject.x -= moveVelocity;
+            }
+            if (this.selectedObject instanceof Circle) {
+                if (keyRegister.e) {
+                    this.selectedObject.radius += moveVelocity;
+                }
+                if (keyRegister.q) {
+                    this.selectedObject.radius -= moveVelocity;
+                }
+            }
+            this.updateObjects();
+            this.syncInspector();
+        }
+    }
+
+    drawCircleConnections() {
+        var threshold = 3;
+        this.context.lineWidth = 2;
+        for (var i = 0; i < this.objects.length; i++) {
+            var obj = this.objects[i];
+            if (obj instanceof Circle) {
+                for (var k = i + 1; k < this.objects.length; k++) {
+                    var other = this.objects[k];
+                    if (other instanceof Circle) {
+                        var d = dist(obj.coords, other.coords);
+                        if (Math.abs(d - (obj.radius + other.radius)) < threshold) {
+                            this.context.beginPath();
+                            this.context.moveTo(obj.x + this.offset.x, obj.y + this.offset.y);
+                            this.context.lineTo(other.x + this.offset.x, other.y + this.offset.y);
+                            this.context.stroke();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     update() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ui.xOffset.html(this.offset.x);
@@ -301,12 +375,14 @@ class Canvas {
         }
         // draw lines between circles that "touch"!!!
         // get arrow key input for panning and resizing
+        this.drawCircleConnections();
         if (this.grid.enabled) {
             this.drawGrid();
         }
         if (this.diagonals) {
             this.drawDiagonals();
         }
+        this.handleKeys();
     }
 
     createCircle() {
@@ -343,8 +419,13 @@ class Canvas {
     }
 
     selectObject(obj) {
+        for (var i = 0; i < this.objects.length; i++) {
+            this.objects[i].isSelected = false;
+        }
+
         if (obj instanceof Circle) {
             this.hideWindows();
+            obj.isSelected = true;
             this.ui.circle.window.show();
             this.selectedObject = obj;
 
@@ -406,7 +487,6 @@ class Canvas {
             self.selectedObject.y = self.objectDrag.objY0 - dy;
 
             self.updateObjects();
-
             self.syncInspector();
         } if (self.globalDrag.dragging) {
             // is dragging...?
