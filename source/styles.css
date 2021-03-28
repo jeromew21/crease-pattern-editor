@@ -1,0 +1,15 @@
+body {
+    padding-top: 2em;
+    background-color: aliceblue;
+}
+
+#canvas-main {
+    border: 1px black solid;
+    background-color: gray;
+}
+
+#div-ui {
+    background-color: gray;
+    padding: 1em;
+    font-family: monospace;
+}
