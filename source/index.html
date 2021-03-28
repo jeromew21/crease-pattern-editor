@@ -18,28 +18,111 @@
 </head>
 
 <body>
-    <div class="container">
-    <div class="row">
-        <div class="col-8">
-            <canvas id="canvas-main"></canvas>
-        </div>
-        <div class="col" id="div-ui">
-            <div id="ui-inspector">
-                Nothing selected
+    <div style="margin-right: 1em;">
+        <div class="row">
+            <div class="col-8">
+                <canvas id="canvas-main"></canvas>
             </div>
-            <input />
-            <button>Push Me</button>
-            <div>
-                Mouse
-                <br>
-                x: <span id="ui-x">0</span>, y: <span id="ui-y">0</span>
-                <br>
-                Offset
-                <br>
-                x: <span id="ui-x-offset">0</span>, y: <span id="ui-y-offset">0</span>
+            <div class="col">
+                <div class="container div-ui" id="ui-circle-inspector">
+                    <h1>Circle Inspector</h1>
+                    <div>
+                        <label for="ui-circle-name">Name:</label> <input type="text" name="ui-circle-name" id="ui-circle-name" />
+                    </div>
+                    <div>
+                        <label for="ui-circle-x">x:</label> <input type="text" name="ui-circle-x" id="ui-circle-x" />
+                    </div>
+                    <div>
+                        <label for="ui-circle-y">y:</label> <input type="text" name="ui-circle-y" id="ui-circle-y" />
+                    </div>
+                    <div>
+                        <label for="ui-circle-radius">Radius:</label> <input type="text" name="ui-circle-radius" id="ui-circle-radius"/>
+                    </div>
+                </div>
+
+                 <div class="container div-ui" id="ui-line-inspector">
+                    <h1>Crease Inspector</h1>
+                    <div>
+                        <label>Name:</label> <input type="text" value="nothing selected" />
+                    </div>
+                    <div>
+                        <label>x:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>y:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>Rotation:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>Length:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <button>Morph into angle</button>
+                    </div>
+                </div>
+
+                <div class="container div-ui" id="ui-angle-inspector">
+                    <h1>Angle Inspector</h1>
+                    <div>
+                        <label>Name:</label> <input type="text" value="nothing selected" />
+                    </div>
+                    <div>
+                        <label>x:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>y:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>ϴ:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>Rotation: </label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>Leg 1 length:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <label>Leg 2 length:</label> <input type="text" />
+                    </div>
+                    <div>
+                        <button>Truncate</button>
+                    </div>
+                </div>
+                
+                <div class="container div-ui">
+                    <div>
+                        <button id="ui-new-circle">New Circle</button>
+                    </div>
+                    <div>
+                        <label for="ui-grid">Show main diagonals</label> <input type="checkbox" checked
+                            name="ui-diagonals" id="ui-diagonals">
+                    </div>
+                    <div>
+                        <label for="ui-grid">Show grid</label> <input type="checkbox" name="ui-grid" id="ui-grid">
+                    </div>
+                    <div>
+                        <label for="ui-grid-count">Grid demonination:</label> <input type="number" name="ui-grid-count"
+                            id="ui-grid-count" value=8 />
+                    </div>
+                    <div>
+                        <button id="ui-recenter">Re-center</button>
+                    </div>
+                    <div>
+                        <select></select>
+                    </div>
+                    <div>
+                        Mouse
+                        <br>
+                        x: <span id="ui-x">0</span>, y: <span id="ui-y">0</span>
+                        <br>
+                        Drag offset
+                        <br>
+                        x: <span id="ui-x-offset">0</span>, y: <span id="ui-y-offset">0</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"

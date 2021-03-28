@@ -1,15 +1,31 @@
 body {
-    padding-top: 2em;
+    margin: 0;
+    padding: 0;
     background-color: aliceblue;
 }
 
+html {
+    margin: 0;
+    padding: 0;
+}
+
 #canvas-main {
-    border: 1px black solid;
     background-color: gray;
 }
 
-#div-ui {
+.div-ui {
     background-color: gray;
-    padding: 1em;
-    font-family: monospace;
+    font-family: inherit;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
+
+.div-ui div {
+    margin-bottom: 0.5em;
+}
+
+input[type="text"], input[type=number] {
+    width: 8em;
 }
