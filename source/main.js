@@ -33,26 +33,47 @@ function dist(c1, c2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-class Square {
+class CanvasObject {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    name() {}
+    
+    update() {}
+
+    xRel(offset, zoom) {
+        return (this.x + offset.x)*zoom;
+    }
+
+    yRel(offset, zoom) {
+        return (this.y + offset.y)*zoom;
+    }
+
+    get coords() {
+        return { x: this.x, y: this.y };
+    }
+
+    isPointInside() {}
+    draw() {}
+}
+
+class Square extends CanvasObject {
     constructor(size, x, y) {
+        super(x, y);
         this.size = size;
-        this.x = x; // absolute x
-        this.y = y; // absolute y
     }
 
     name() {
         return "square";
     }
 
-    update() {
-
-    }
-
     // return a rectangle of bounds relative to the object
     rectBounds(offset, zoom) {
         return {
-            x: this.x + offset.x,
-            y: this.y + offset.y,
+            x: this.xRel(offset, zoom),
+            y: this.yRel(offset, zoom),
             w: this.size * zoom,
             h: this.size * zoom
         }
@@ -68,25 +89,26 @@ class Square {
         ctx.strokeStyle = '#000000'
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.fillRect(this.x + offset.x, this.y + offset.y, w, w);
+        ctx.fillRect(this.xRel(offset, zoom), this.yRel(offset, zoom), w, w);
         ctx.stroke();
         ctx.lineWidth = 0.5;
-        ctx.strokeRect(this.x + offset.x, this.y + offset.y, w, w);
+        ctx.strokeRect(this.xRel(offset, zoom), this.yRel(offset, zoom), w, w);
     }
 }
 
-class Triangle {
-    constructor(x, y, theta0, theta1, scale) {}
+class Triangle extends CanvasObject {
+    constructor(x, y, theta0, theta1, scale) {
+        super(x, y);
+    }
 }
 
-class Circle {
+class Circle extends CanvasObject {
     static circleCount = 0;
     static pink = "#ff4757";
     static black = "#000000"
 
     constructor(x, y, r, parent) {
-        this.x = x;
-        this.y = y;
+        super(x, y);
         this.radius = r;
         this.parent = parent;
         this.name_ = "circle " + Circle.circleCount;
@@ -97,10 +119,6 @@ class Circle {
 
     name() {
         return this.name_;
-    }
-
-    get coords() {
-        return { x: this.x, y: this.y };
     }
 
     // sets the state of an object
@@ -118,8 +136,8 @@ class Circle {
     }
 
     isPointInside(coords, offset, zoom) {
-        var dx = coords.x - (this.x + offset.x);
-        var dy = coords.y - (this.y + offset.y);
+        var dx = coords.x - this.xRel(offset, zoom);
+        var dy = coords.y - this.yRel(offset, zoom);
 
         return Math.sqrt(dx * dx + dy * dy) < this.radius * zoom;
     }
@@ -135,10 +153,10 @@ class Circle {
 
         var r = this.radius * zoom;
         ctx.beginPath();
-        ctx.arc(this.x + offset.x, this.y + offset.y, r, 0, 2 * Math.PI);
+        ctx.arc(this.xRel(offset, zoom), this.yRel(offset, zoom), r, 0, 2 * Math.PI);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(this.x + offset.x, this.y + offset.y, 1, 0, 2 * Math.PI);
+        ctx.arc(this.xRel(offset, zoom), this.yRel(offset, zoom), 1, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     }
@@ -218,6 +236,10 @@ class Canvas {
                 radiusMul: $("#ui-inspector-radius-mul"),
                 radius: $("#ui-inspector-radius")
             },
+            zoom: {
+                slider: $("#ui-zoom"),
+                value: $("#ui-zoom-value")
+            }
         };
 
         this.selectedObject = null;
@@ -240,6 +262,9 @@ class Canvas {
         this.ui.recenter.click(function () {
             self.offset.x = 0;
             self.offset.y = 0;
+            self.zoom = 1;
+            self.ui.zoom.slider.val(100);
+            self.ui.zoom.value.html("100%");
         });
 
         this.ui.grid.checkbox.prop('checked', self.grid.enabled);
@@ -248,28 +273,34 @@ class Canvas {
         }
         this.ui.grid.count.val(self.grid.count);
         this.ui.diagonals.val(self.diagonals);
+        
+        this.ui.zoom.slider.val(100);
+        this.ui.zoom.slider.change(function() {
+            self.zoom = $(this).val() / 100;
+            self.ui.zoom.value.html($(this).val() + "%");
+        });
 
-        this.ui.inspector.x.change(function() {
+        this.ui.inspector.x.change(function () {
             self.selectedObject.x = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.xMul.val());
         });
-        
-        this.ui.inspector.y.change(function() {
+
+        this.ui.inspector.y.change(function () {
             self.selectedObject.y = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.yMul.val());
         });
 
-        this.ui.inspector.radius.change(function() {
+        this.ui.inspector.radius.change(function () {
             self.selectedObject.radius = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.radiusMul.val());
         });
 
-        this.ui.inspector.xMul.change(function() {
+        this.ui.inspector.xMul.change(function () {
             self.syncInspector();
         })
 
-        this.ui.inspector.yMul.change(function() {
+        this.ui.inspector.yMul.change(function () {
             self.syncInspector();
         })
 
-        this.ui.inspector.radiusMul.change(function() {
+        this.ui.inspector.radiusMul.change(function () {
             self.syncInspector();
         })
 
@@ -333,11 +364,17 @@ class Canvas {
         var squareSize = this.square.size;
         this.context.lineWidth = 0.5;
         this.context.strokeStyle = "#000000";
+        var arr = [
+            [this.offset.x * this.zoom, this.offset.y * this.zoom],
+            [(squareSize + this.offset.x) * this.zoom, (squareSize + this.offset.y) * this.zoom],
+            [(squareSize + this.offset.x) * this.zoom, this.offset.y * this.zoom],
+            [this.offset.x * this.zoom, (squareSize + this.offset.y) * this.zoom]
+        ]
         this.context.beginPath();
-        this.context.moveTo(this.offset.x, this.offset.y);
-        this.context.lineTo(squareSize + this.offset.x, squareSize + this.offset.y);
-        this.context.moveTo(this.offset.x + squareSize, this.offset.y);
-        this.context.lineTo(this.offset.x, squareSize + this.offset.y);
+        this.context.moveTo(...arr[0]);
+        this.context.lineTo(...arr[1]);
+        this.context.moveTo(...arr[2]);
+        this.context.lineTo(...arr[3]);
         this.context.stroke();
     }
 
@@ -399,8 +436,8 @@ class Canvas {
                         var d = dist(obj.coords, other.coords) - (obj.radius + other.radius);
                         if (d >= 0 && d < threshold) {
                             this.context.beginPath();
-                            this.context.moveTo(obj.x + this.offset.x, obj.y + this.offset.y);
-                            this.context.lineTo(other.x + this.offset.x, other.y + this.offset.y);
+                            this.context.moveTo(obj.xRel(this.offset, this.zoom), obj.yRel(this.offset, this.zoom));
+                            this.context.lineTo(other.xRel(this.offset, this.zoom), other.yRel(this.offset, this.zoom));
                             this.context.stroke();
                         }
                     }
@@ -485,11 +522,11 @@ class Canvas {
         if (obj != null) {
             if (!(obj instanceof Square)) {
                 self.selectObject(obj);
-                self.objectDrag.dragging = true;
-                self.objectDrag.x0 = self.mouse.x;
-                self.objectDrag.y0 = self.mouse.y;
                 self.objectDrag.objX0 = obj.x;
                 self.objectDrag.objY0 = obj.y;
+                self.objectDrag.x0 = self.mouse.x;
+                self.objectDrag.y0 = self.mouse.y;
+                self.objectDrag.dragging = true;
             } else {
                 // deselect
                 self.selectObject(null);

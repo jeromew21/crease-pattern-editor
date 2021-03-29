@@ -75,26 +75,29 @@
                     </div>
                     <div>
                         <label for="ui-grid-count">Grid demonination:</label> <input type="number" name="ui-grid-count"
-                            id="ui-grid-count" value=8 />
+                            id="ui-grid-count" value="8" />
                     </div>
                     <div>
-                        <label>Show square</label>
+                        <label>Show square</label> <input type="checkbox" />
+                    </div>
+                    <div>
+                        <label>Snap to intersections</label> <input type="checkbox" />
+                    </div>
+                    <div>
+                        <label>Snap to lines</label> <input type="checkbox" />
+                    </div>
+                    <div>
+                        <label for="ui-zoom">Zoom:</label> <input name="ui-zoom" id="ui-zoom" type="range" min="1" max="200" value="100" />
+                        <span id="ui-zoom-value">100%</span>
                     </div>
                     <div>
                         <button id="ui-recenter">Re-center</button>
                     </div>
-                    <div>
-                        <select></select>
-                    </div>
-                    <div>
-                        Mouse
+                    <!-- <div>
+                        Mouse: x: <span id="ui-x">0</span>, y: <span id="ui-y">0</span>
                         <br>
-                        x: <span id="ui-x">0</span>, y: <span id="ui-y">0</span>
-                        <br>
-                        Drag offset
-                        <br>
-                        x: <span id="ui-x-offset">0</span>, y: <span id="ui-y-offset">0</span>
-                    </div>
+                        Drag offset: x: <span id="ui-x-offset">0</span>, y: <span id="ui-y-offset">0</span>
+                    </div> -->
                 </div>
             </div>
         </div>
