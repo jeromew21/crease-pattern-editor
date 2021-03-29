@@ -39,24 +39,24 @@ class CanvasObject {
         this.y = y;
     }
 
-    name() {}
-    
-    update() {}
+    name() { }
+
+    update() { }
 
     xRel(offset, zoom) {
-        return (this.x + offset.x)*zoom;
+        return (this.x + offset.x) * zoom;
     }
 
     yRel(offset, zoom) {
-        return (this.y + offset.y)*zoom;
+        return (this.y + offset.y) * zoom;
     }
 
     get coords() {
         return { x: this.x, y: this.y };
     }
 
-    isPointInside() {}
-    draw() {}
+    isPointInside() { }
+    draw() { }
 }
 
 class Square extends CanvasObject {
@@ -248,12 +248,79 @@ class Canvas {
 
         $("html").css("cursor", "default");
 
-        self = this; // to make sure 'this' isn't stolen by scope...?
+        var self = this; // to make sure 'this' isn't stolen by scope
 
-        this.canvas.addEventListener("mousemove", this.handleMove);
-        this.canvas.addEventListener("mousedown", this.handleDown);
-        this.canvas.addEventListener("mouseup", this.handleUp);
-        this.canvas.addEventListener("mouseleave", this.handleLeave);
+        var handleMove = function (e) {
+            var rect = self.canvas.getBoundingClientRect();
+            self.mouse.x = e.clientX - rect.left;
+            self.mouse.y = e.clientY - rect.top;
+            self.ui.x.html(self.mouse.x);
+            self.ui.y.html(self.mouse.y);
+
+            if (self.objectDrag.dragging) {
+                var dx = dragRatio * (self.objectDrag.x0 - self.mouse.x);
+                var dy = dragRatio * (self.objectDrag.y0 - self.mouse.y);
+
+                self.selectedObject.x = self.objectDrag.objX0 - dx;
+                self.selectedObject.y = self.objectDrag.objY0 - dy;
+
+                self.updateObjects();
+                self.syncInspector();
+            } if (self.globalDrag.dragging) {
+                // is dragging...?
+                var dx = dragRatio * (self.globalDrag.x0 - self.mouse.x);
+                var dy = dragRatio * (self.globalDrag.y0 - self.mouse.y);
+
+                self.offset.x = self.globalDrag.offsetX0 - dx;
+                self.offset.y = self.globalDrag.offsetY0 - dy;
+            } else {
+                // set cursor depending on object underneath
+                if (self.getObjectUnderneath(self.mouse) == null) {
+                    $("html").css("cursor", "pointer");
+                } else {
+                    $("html").css("cursor", "default");
+                }
+            }
+        }
+
+        var handleLeave = function (e) {
+            self.globalDragStop();
+        }
+
+        var handleDown = function (e) {
+            var obj = self.getObjectUnderneath(self.mouse);
+            if (obj != null) {
+                if (!(obj instanceof Square)) {
+                    self.selectObject(obj);
+                    self.objectDrag.objX0 = obj.x;
+                    self.objectDrag.objY0 = obj.y;
+                    self.objectDrag.x0 = self.mouse.x;
+                    self.objectDrag.y0 = self.mouse.y;
+                    self.objectDrag.dragging = true;
+                } else {
+                    // deselect
+                    self.selectObject(null);
+                    self.syncInspector();
+                }
+            } else if (!self.globalDrag.dragging) {
+                // init global drag
+                self.globalDrag.dragging = true;
+                self.globalDrag.x0 = self.mouse.x;
+                self.globalDrag.y0 = self.mouse.y;
+                self.globalDrag.offsetX0 = self.offset.x;
+                self.globalDrag.offsetY0 = self.offset.y;
+                $("html").css("cursor", "move");
+            }
+        }
+
+        var handleUp = function (e) {
+            self.globalDragStop();
+        }
+
+        this.canvas.addEventListener("mousemove", handleMove);
+        this.canvas.addEventListener("mousedown", handleDown);
+        this.canvas.addEventListener("mouseup", handleUp);
+        this.canvas.addEventListener("mouseleave", handleLeave);
 
         this.ui.circle.new.click(function () {
             self.createCircle();
@@ -273,9 +340,9 @@ class Canvas {
         }
         this.ui.grid.count.val(self.grid.count);
         this.ui.diagonals.val(self.diagonals);
-        
+
         this.ui.zoom.slider.val(100);
-        this.ui.zoom.slider.change(function() {
+        this.ui.zoom.slider.change(function () {
             self.zoom = $(this).val() / 100;
             self.ui.zoom.value.html($(this).val() + "%");
         });
@@ -335,20 +402,20 @@ class Canvas {
     drawGrid() {
         // need to overhaul for generalized shapes...
         var squareSize = this.square.size;
-        var stepSize = this.square.size / self.grid.count;
+        var stepSize = this.square.size / this.grid.count;
         var overflowAmt = 500;
         this.context.strokeStyle = "#000000";
         this.context.lineWidth = 0.5;
         this.context.beginPath();
         for (var i = -stepSize * 10; i < this.square.size + stepSize * 10; i += stepSize) {
             //this.context.beginPath();
-            this.context.moveTo(-overflowAmt + this.offset.x, i + this.offset.y);
-            this.context.lineTo(squareSize + this.offset.x + overflowAmt, i + this.offset.y);
+            this.context.moveTo(this.zoom * (-overflowAmt + this.offset.x), this.zoom * (i + this.offset.y));
+            this.context.lineTo(this.zoom * (squareSize + this.offset.x + overflowAmt), this.zoom * (i + this.offset.y));
             //this.context.stroke();
 
             //this.context.beginPath();
-            this.context.moveTo(i + this.offset.x, -overflowAmt + this.offset.y);
-            this.context.lineTo(i + this.offset.x, squareSize + this.offset.y + overflowAmt);
+            this.context.moveTo(this.zoom * (i + this.offset.x), this.zoom * (-overflowAmt + this.offset.y));
+            this.context.lineTo(this.zoom * (i + this.offset.x), this.zoom * (squareSize + this.offset.y + overflowAmt));
             //this.context.stroke();
         }
         this.context.stroke();
@@ -379,8 +446,8 @@ class Canvas {
     }
 
     updateObjects() {
-        for (var i = 0; i < self.objects.length; i++) {
-            var obj = self.objects[i];
+        for (var i = 0; i < this.objects.length; i++) {
+            var obj = this.objects[i];
             obj.update();
         }
     }
@@ -476,16 +543,12 @@ class Canvas {
     }
 
     globalDragStop() {
-        if (self.globalDrag.dragging) {
-            self.globalDrag.dragging = false;
+        if (this.globalDrag.dragging) {
+            this.globalDrag.dragging = false;
             $("html").css("cursor", "default");
-        } else if (self.objectDrag.dragging) {
-            self.objectDrag.dragging = false;
+        } else if (this.objectDrag.dragging) {
+            this.objectDrag.dragging = false;
         }
-    }
-
-    handleLeave(e) {
-        self.globalDragStop();
     }
 
     // Write out object data to the proper inspector window.
@@ -517,36 +580,6 @@ class Canvas {
         }
     }
 
-    handleDown(e) {
-        var obj = self.getObjectUnderneath(self.mouse);
-        if (obj != null) {
-            if (!(obj instanceof Square)) {
-                self.selectObject(obj);
-                self.objectDrag.objX0 = obj.x;
-                self.objectDrag.objY0 = obj.y;
-                self.objectDrag.x0 = self.mouse.x;
-                self.objectDrag.y0 = self.mouse.y;
-                self.objectDrag.dragging = true;
-            } else {
-                // deselect
-                self.selectObject(null);
-                self.syncInspector();
-            }
-        } else if (!self.globalDrag.dragging) {
-            // init global drag
-            self.globalDrag.dragging = true;
-            self.globalDrag.x0 = self.mouse.x;
-            self.globalDrag.y0 = self.mouse.y;
-            self.globalDrag.offsetX0 = self.offset.x;
-            self.globalDrag.offsetY0 = self.offset.y;
-            $("html").css("cursor", "move");
-        }
-    }
-
-    handleUp(e) {
-        self.globalDragStop();
-    }
-
     // given relative (ui) coords (x, y), return the object underneath.
     getObjectUnderneath(coords) {
         for (var i = this.objects.length - 1; i >= 0; i--) {
@@ -556,39 +589,6 @@ class Canvas {
             }
         }
         return null;
-    }
-
-    handleMove(e) {
-        var rect = self.canvas.getBoundingClientRect();
-        self.mouse.x = e.clientX - rect.left;
-        self.mouse.y = e.clientY - rect.top;
-        self.ui.x.html(self.mouse.x);
-        self.ui.y.html(self.mouse.y);
-
-        if (self.objectDrag.dragging) {
-            var dx = dragRatio * (self.objectDrag.x0 - self.mouse.x);
-            var dy = dragRatio * (self.objectDrag.y0 - self.mouse.y);
-
-            self.selectedObject.x = self.objectDrag.objX0 - dx;
-            self.selectedObject.y = self.objectDrag.objY0 - dy;
-
-            self.updateObjects();
-            self.syncInspector();
-        } if (self.globalDrag.dragging) {
-            // is dragging...?
-            var dx = dragRatio * (self.globalDrag.x0 - self.mouse.x);
-            var dy = dragRatio * (self.globalDrag.y0 - self.mouse.y);
-
-            self.offset.x = self.globalDrag.offsetX0 - dx;
-            self.offset.y = self.globalDrag.offsetY0 - dy;
-        } else {
-            // set cursor depending on object underneath
-            if (self.getObjectUnderneath(self.mouse) == null) {
-                $("html").css("cursor", "pointer");
-            } else {
-                $("html").css("cursor", "default");
-            }
-        }
     }
 }
 

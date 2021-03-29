@@ -12,7 +12,7 @@
 
     <link href="styles.css" rel="stylesheet" />
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="jquery-3.6.0.min.js"></script>
 
     <title>Crease Pattern Editor</title>
 </head>
@@ -25,7 +25,7 @@
             </div>
             <div class="col">
                 <div class="container div-ui" id="ui-inspector">
-                    <h1>Inspector</h1>
+                    <h2 style="text-align: center; margin-bottom: 0.5em;">Inspector</h2>
                     <div>
                         <label for="ui-inspector-name">Name:</label> <input type="text" name="ui-insepctor-name" id="ui-inspector-name" />
                     </div>
@@ -52,6 +52,10 @@
                             <option value=2>&#8730; 2</option>
                             <option value=3>&#8730; 3</option>
                         </select>
+                    </div>
+                    <div>
+                        <label for="ui-inspector-lock">Lock</label>
+                        <input name="ui-inspector-lock" id="ui-inspector-lock" type="checkbox" />
                     </div>
                 </div>
 
