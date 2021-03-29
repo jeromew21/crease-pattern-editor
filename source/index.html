@@ -24,69 +24,50 @@
                 <canvas id="canvas-main"></canvas>
             </div>
             <div class="col">
-                <div class="container div-ui" id="ui-circle-inspector">
-                    <h1>Circle Inspector</h1>
+                <div class="container div-ui" id="ui-inspector">
+                    <h1>Inspector</h1>
                     <div>
-                        <label for="ui-circle-name">Name:</label> <input type="text" name="ui-circle-name" id="ui-circle-name" />
+                        <label for="ui-inspector-name">Name:</label> <input type="text" name="ui-insepctor-name" id="ui-inspector-name" />
                     </div>
                     <div>
-                        <label for="ui-circle-x">x:</label> <input type="text" name="ui-circle-x" id="ui-circle-x" />
+                        <label for="ui-inspector-x">x:</label> <input type="text" name="ui-inspector-x" id="ui-inspector-x" />
+                        * <select id="ui-inspector-x-mul">
+                            <option value=1>1</option>
+                            <option value=2>&#8730; 2</option>
+                            <option value=3>&#8730; 3</option>
+                        </select>
                     </div>
                     <div>
-                        <label for="ui-circle-y">y:</label> <input type="text" name="ui-circle-y" id="ui-circle-y" />
+                        <label for="ui-inspector-y">y:</label> <input type="text" name="ui-inspector-y" id="ui-inspector-y" />
+                        * <select id="ui-inspector-y-mul">
+                            <option value=1>1</option>
+                            <option value=2>&#8730; 2</option>
+                            <option value=3>&#8730; 3</option>
+                        </select>
                     </div>
                     <div>
-                        <label for="ui-circle-radius">Radius:</label> <input type="text" name="ui-circle-radius" id="ui-circle-radius"/>
-                    </div>
-                </div>
-
-                 <div class="container div-ui" id="ui-line-inspector">
-                    <h1>Crease Inspector</h1>
-                    <div>
-                        <label>Name:</label> <input type="text" value="nothing selected" />
-                    </div>
-                    <div>
-                        <label>x:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>y:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>Rotation:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>Length:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <button>Morph into angle</button>
+                        <label for="ui-inspector-radius">Radius:</label> <input type="text" name="ui-inspector-radius" id="ui-inspector-radius"/>
+                        * <select id="ui-inspector-radius-mul">
+                            <option value=1>1</option>
+                            <option value=2>&#8730; 2</option>
+                            <option value=3>&#8730; 3</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="container div-ui" id="ui-tile-inspector">
-                    <h1>Tile Inspector</h1>
-                    <div>
-                        <label>Name:</label> <input type="text" value="nothing selected" />
-                    </div>
-                    <div>
-                        <label>x:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>y:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>ϴ:</label> <input type="text" />
-                    </div>
-                    <div>
-                        <label>Scale:</label> <input type="text" />
-                    </div>
-                </div>
-                
                 <div class="container div-ui">
                     <div>
-                        <button id="ui-new-circle">New Circle</button>
+                        <button id="ui-new-circle">New circle</button>
                     </div>
                     <div>
-                        <label for="ui-grid">Show main diagonals</label> <input type="checkbox" checked
+                        <select id="ui-tile-select">
+                            <option value="22.5">22.5° isoceles</option>
+                            <option value="45">45° isoceles</option>
+                        </select>
+                        <button id="ui-new-tile">New tile</button>
+                    </div>
+                    <div>
+                        <label for="ui-diagonals">Show main diagonals</label> <input type="checkbox" checked
                             name="ui-diagonals" id="ui-diagonals">
                     </div>
                     <div>

@@ -28,5 +28,5 @@ html {
 }
 
 input[type="text"], input[type=number] {
-    width: 8em;
+    width: 10em;
 }

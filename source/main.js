@@ -7,7 +7,8 @@ var keyRegister = {
     s: false,
     d: false,
     q: false,
-    e: false
+    e: false,
+    Delete: false
 };
 
 document.onkeydown = function (e) {
@@ -74,6 +75,10 @@ class Square {
     }
 }
 
+class Triangle {
+    constructor(x, y, theta0, theta1, scale) {}
+}
+
 class Circle {
     static circleCount = 0;
     static pink = "#ff4757";
@@ -98,6 +103,7 @@ class Circle {
         return { x: this.x, y: this.y };
     }
 
+    // sets the state of an object
     update() {
         for (var i = 0; i < this.parent.objects.length; i++) {
             var obj = this.parent.objects[i];
@@ -200,26 +206,23 @@ class Canvas {
             diagonals: $("#ui-diagonals"),
             recenter: $("#ui-recenter"),
             circle: {
-                window: $("#ui-circle-inspector"),
-                new: $("#ui-new-circle"),
-                name: $("#ui-circle-name"),
-                x: $("#ui-circle-x"),
-                y: $("#ui-circle-y"),
-                radius: $("#ui-circle-radius")
+                new: $("#ui-new-circle")
             },
-            line: {
-                window: $("#ui-line-inspector")
+            inspector: {
+                window: $("#ui-inspector"),
+                name: $("#ui-inspector-name"),
+                x: $("#ui-inspector-x"),
+                y: $("#ui-inspector-y"),
+                xMul: $("#ui-inspector-x-mul"),
+                yMul: $("#ui-inspector-y-mul"),
+                radiusMul: $("#ui-inspector-radius-mul"),
+                radius: $("#ui-inspector-radius")
             },
-            tile: {
-                window: $("#ui-tile-inspector")
-            }
         };
 
         this.selectedObject = null;
 
-        this.ui.circle.window.hide();
-        this.ui.tile.window.hide();
-        this.ui.line.window.hide();
+        this.ui.inspector.window.hide();
 
         $("html").css("cursor", "default");
 
@@ -246,6 +249,31 @@ class Canvas {
         this.ui.grid.count.val(self.grid.count);
         this.ui.diagonals.val(self.diagonals);
 
+        this.ui.inspector.x.change(function() {
+            self.selectedObject.x = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.xMul.val());
+        });
+        
+        this.ui.inspector.y.change(function() {
+            self.selectedObject.y = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.yMul.val());
+        });
+
+        this.ui.inspector.radius.change(function() {
+            self.selectedObject.radius = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.radiusMul.val());
+        });
+
+        this.ui.inspector.xMul.change(function() {
+            self.syncInspector();
+        })
+
+        this.ui.inspector.yMul.change(function() {
+            self.syncInspector();
+        })
+
+        this.ui.inspector.radiusMul.change(function() {
+            self.syncInspector();
+        })
+
+
         this.ui.grid.checkbox.change(function () {
             if ($(this).is(':checked')) {
                 self.grid.enabled = true;
@@ -270,9 +298,7 @@ class Canvas {
     }
 
     hideWindows() {
-        this.ui.circle.window.hide();
-        this.ui.tile.window.hide();
-        this.ui.line.window.hide();
+        this.ui.inspector.window.hide();
     }
 
     drawGrid() {
@@ -295,6 +321,12 @@ class Canvas {
             //this.context.stroke();
         }
         this.context.stroke();
+    }
+
+    showCircleInspector() {
+        // show circle specific fields and hide others
+        this.ui.inspector.radius.show();
+        this.ui.inspector.radiusMul.show();
     }
 
     drawDiagonals() {
@@ -337,23 +369,35 @@ class Canvas {
                 if (keyRegister.q) {
                     this.selectedObject.radius -= moveVelocity;
                 }
+                this.updateObjects();
             }
-            this.updateObjects();
-            this.syncInspector();
+            if (keyRegister.Delete) {
+                var ind = this.objects.indexOf(this.selectedObject);
+                if (ind > -1) {
+                    this.objects.splice(ind, 1); // remove from obj list
+                    this.selectObject(null); //remove selection
+                    this.syncInspector();
+                }
+            }
         }
+    }
+
+    get unit() {
+        return this.square.size;
     }
 
     drawCircleConnections() {
         var threshold = 3;
-        this.context.lineWidth = 2;
+        this.context.lineWidth = 1;
+        this.context.strokeStyle = "#3742fa"
         for (var i = 0; i < this.objects.length; i++) {
             var obj = this.objects[i];
             if (obj instanceof Circle) {
                 for (var k = i + 1; k < this.objects.length; k++) {
                     var other = this.objects[k];
                     if (other instanceof Circle) {
-                        var d = dist(obj.coords, other.coords);
-                        if (Math.abs(d - (obj.radius + other.radius)) < threshold) {
+                        var d = dist(obj.coords, other.coords) - (obj.radius + other.radius);
+                        if (d >= 0 && d < threshold) {
                             this.context.beginPath();
                             this.context.moveTo(obj.x + this.offset.x, obj.y + this.offset.y);
                             this.context.lineTo(other.x + this.offset.x, other.y + this.offset.y);
@@ -396,7 +440,6 @@ class Canvas {
 
     globalDragStop() {
         if (self.globalDrag.dragging) {
-            console.log("drag end");
             self.globalDrag.dragging = false;
             $("html").css("cursor", "default");
         } else if (self.objectDrag.dragging) {
@@ -408,13 +451,18 @@ class Canvas {
         self.globalDragStop();
     }
 
+    // Write out object data to the proper inspector window.
     syncInspector() {
         var obj = this.selectedObject;
+        var unit = this.unit;
+        this.hideWindows();
         if (obj instanceof Circle) {
-            this.ui.circle.name.val(obj.name());
-            this.ui.circle.x.val(obj.x);
-            this.ui.circle.y.val(obj.y);
-            this.ui.circle.radius.val(obj.radius);
+            this.ui.inspector.window.show();
+            this.showCircleInspector();
+            this.ui.inspector.name.val(obj.name());
+            this.ui.inspector.x.val((obj.x / unit) / Math.sqrt(this.ui.inspector.xMul.val()));
+            this.ui.inspector.y.val((obj.y / unit) / Math.sqrt(this.ui.inspector.yMul.val()));
+            this.ui.inspector.radius.val((obj.radius / unit) / Math.sqrt(this.ui.inspector.radiusMul.val()));
         }
     }
 
@@ -423,12 +471,11 @@ class Canvas {
             this.objects[i].isSelected = false;
         }
 
+        this.selectedObject = obj;
+
         if (obj instanceof Circle) {
             this.hideWindows();
             obj.isSelected = true;
-            this.ui.circle.window.show();
-            this.selectedObject = obj;
-
             this.syncInspector();
         }
     }
@@ -438,15 +485,17 @@ class Canvas {
         if (obj != null) {
             if (!(obj instanceof Square)) {
                 self.selectObject(obj);
-                console.log("obj drag start")
                 self.objectDrag.dragging = true;
                 self.objectDrag.x0 = self.mouse.x;
                 self.objectDrag.y0 = self.mouse.y;
                 self.objectDrag.objX0 = obj.x;
                 self.objectDrag.objY0 = obj.y;
+            } else {
+                // deselect
+                self.selectObject(null);
+                self.syncInspector();
             }
         } else if (!self.globalDrag.dragging) {
-            console.log("drag start");
             // init global drag
             self.globalDrag.dragging = true;
             self.globalDrag.x0 = self.mouse.x;
