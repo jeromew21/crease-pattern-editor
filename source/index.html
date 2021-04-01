@@ -54,6 +54,41 @@
                         </select>
                     </div>
                     <div>
+                        <label for="ui-inspector-length-1">Length<sub>1</sub>:</label>
+                        <input type="text" name="ui-inspector-length-1" id="ui-inspector-length-1"/>
+                        * <select id="ui-inspector-length-mul-1">
+                            <option value=1>1</option>
+                            <option value=2>&#8730; 2</option>
+                            <option value=3>&#8730; 3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ui-inspector-length-2">Length<sub>2</sub>:</label>
+                        <input type="text" name="ui-inspector-length-2" id="ui-inspector-length-2"/>
+                        * <select id="ui-inspector-length-mul-2">
+                            <option value=1>1</option>
+                            <option value=2>&#8730; 2</option>
+                            <option value=3>&#8730; 3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ui-theta-1">θ <sub>1</sub>:</label>
+                        <input name="ui-theta-1" id="ui-theta-1" type="text"/>
+                        <select id="ui-theta-1-unit">
+                            <option>°</option>
+                            <option>rad</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ui-rotation">Rotation:</label>
+                        <input name="ui-rotation" id="ui-rotation" type="text"/>
+                        <select id="ui-rotation">
+                            <option>°</option>
+                            <option>rad</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label for="ui-inspector-lock">Lock</label>
                         <input name="ui-inspector-lock" id="ui-inspector-lock" type="checkbox" />
                     </div>
@@ -69,6 +104,10 @@
                             <option value="45">45° isoceles</option>
                         </select>
                         <button id="ui-new-tile">New tile</button>
+                    </div>
+                    <div>
+                        <label for="ui-show-circles">Show circles</label>
+                        <input type="checkbox">
                     </div>
                     <div>
                         <label for="ui-diagonals">Show main diagonals</label> <input type="checkbox" checked
@@ -111,6 +150,7 @@
         integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
         crossorigin="anonymous"></script>
 
+    <script src="helpers.js"></script>
     <script src="main.js"></script>
 </body>
 

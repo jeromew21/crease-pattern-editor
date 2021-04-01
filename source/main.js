@@ -1,42 +1,8 @@
-const dragRatio = 1;
-const moveVelocity = 1;
-
-var keyRegister = {
-    w: false,
-    a: false,
-    s: false,
-    d: false,
-    q: false,
-    e: false,
-    Delete: false
-};
-
-document.onkeydown = function (e) {
-    keyRegister[e.key] = true;
-}
-
-document.onkeyup = function (e) {
-    keyRegister[e.key] = false;
-}
-
-function inBounds(coords, boundingRect) {
-    var x = coords.x;
-    var y = coords.y;
-    return !(x < boundingRect.x || x > boundingRect.x + boundingRect.w
-        || y < boundingRect.y || y > boundingRect.y + boundingRect.h);
-}
-
-function dist(c1, c2) {
-    var dx = c1.x - c2.x;
-    var dy = c1.y - c2.y;
-
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
 class CanvasObject {
     constructor(x, y) {
         this.x = x;
         this.y = y;
+        this.locked = false;
     }
 
     name() { }
@@ -56,7 +22,7 @@ class CanvasObject {
     }
 
     isPointInside() { }
-    draw() { }
+    draw(ctx, offset, zoom) { }
 }
 
 class Square extends CanvasObject {
@@ -97,8 +63,60 @@ class Square extends CanvasObject {
 }
 
 class Triangle extends CanvasObject {
-    constructor(x, y, theta0, theta1, scale) {
+    static count = 0;
+    constructor(x, y, theta, l1, l2) {
         super(x, y);
+        // SAS (side-angle-side)
+        this.theta = theta; // in degrees
+        this.length1 = l1;
+        this.length2 = l2;
+        this.name_ = "triangle" + Triangle.count;
+        Triangle.count += 1;
+    }
+
+    name() {
+        return this.name_;
+    }
+
+    update() {
+
+    }
+
+    draw(ctx, offset, zoom) {
+        var rLength1 = this.length1 * zoom;
+        var rLength2 = this.length2 * zoom;
+
+        var c1 = {
+            x: this.xRel(offset, zoom),
+            y: this.yRel(offset, zoom)
+        }
+
+        var c2 = {
+            x: c1.x + rLength1,
+            y: c1.y
+        }
+
+        var rad = degToRad(this.theta);
+        
+        var c3 = {
+            x: c1.x + rLength2*Math.cos(rad),
+            y: c1.y - rLength2*Math.sin(rad),
+        }
+
+        // apply rotations
+
+        ctx.strokeStyle = "#000000";
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(c1.x, c1.y);
+        ctx.stroke();
+    }
+    
+    isPointInside() {
+
     }
 }
 
@@ -111,7 +129,7 @@ class Circle extends CanvasObject {
         super(x, y);
         this.radius = r;
         this.parent = parent;
-        this.name_ = "circle " + Circle.circleCount;
+        this.name_ = "circle" + Circle.circleCount;
         this.color = Circle.black
         this.isSelected = false;
         Circle.circleCount += 1;
@@ -226,6 +244,10 @@ class Canvas {
             circle: {
                 new: $("#ui-new-circle")
             },
+            tile: {
+                new: $("#ui-new-tile"),
+                selection: $("#ui-tile-select"),
+            },
             inspector: {
                 window: $("#ui-inspector"),
                 name: $("#ui-inspector-name"),
@@ -234,7 +256,19 @@ class Canvas {
                 xMul: $("#ui-inspector-x-mul"),
                 yMul: $("#ui-inspector-y-mul"),
                 radiusMul: $("#ui-inspector-radius-mul"),
-                radius: $("#ui-inspector-radius")
+                radius: $("#ui-inspector-radius"),
+                theta1: {
+                    input: $("#ui-inspector-theta-1"),
+                    unit: null
+                },
+                length1: {
+                    input: $("#ui-inspector-length-1"),
+                    mul: $("#ui-inspector-length-1-mull")
+                },
+                length2: {
+                    input: $("#ui-inspector-length-2"),
+                    mul: $("#ui-inspector-length-2-mul")
+                },
             },
             zoom: {
                 slider: $("#ui-zoom"),
@@ -326,6 +360,10 @@ class Canvas {
             self.createCircle();
         });
 
+        this.ui.tile.new.click(function() {
+            self.createTile(self.ui.tile.selection.val());
+        })
+
         this.ui.recenter.click(function () {
             self.offset.x = 0;
             self.offset.y = 0;
@@ -407,7 +445,7 @@ class Canvas {
         this.context.strokeStyle = "#000000";
         this.context.lineWidth = 0.5;
         this.context.beginPath();
-        for (var i = -stepSize * 10; i < this.square.size + stepSize * 10; i += stepSize) {
+        for (var i = stepSize; i < this.square.size-1; i += stepSize) {
             //this.context.beginPath();
             this.context.moveTo(this.zoom * (-overflowAmt + this.offset.x), this.zoom * (i + this.offset.y));
             this.context.lineTo(this.zoom * (squareSize + this.offset.x + overflowAmt), this.zoom * (i + this.offset.y));
@@ -456,24 +494,35 @@ class Canvas {
         if (this.selectedObject != null) {
             if (keyRegister.w) {
                 this.selectedObject.y -= moveVelocity;
+                this.updateObjects();
+                this.syncInspector();
             }
             if (keyRegister.s) {
                 this.selectedObject.y += moveVelocity;
+                this.updateObjects();
+                this.syncInspector();
             }
             if (keyRegister.d) {
                 this.selectedObject.x += moveVelocity;
+                this.updateObjects();
+                this.syncInspector();
             }
             if (keyRegister.a) {
                 this.selectedObject.x -= moveVelocity;
+                this.updateObjects();
+                this.syncInspector();
             }
             if (this.selectedObject instanceof Circle) {
                 if (keyRegister.e) {
                     this.selectedObject.radius += moveVelocity;
+                    this.updateObjects();
+                    this.syncInspector();
                 }
                 if (keyRegister.q) {
                     this.selectedObject.radius -= moveVelocity;
+                    this.updateObjects();
+                    this.syncInspector();
                 }
-                this.updateObjects();
             }
             if (keyRegister.Delete) {
                 var ind = this.objects.indexOf(this.selectedObject);
@@ -539,6 +588,17 @@ class Canvas {
         var r2 = (Math.random() - 0.5) * hw;
         var c = new Circle(this.square.x + hw + r1, this.square.y + hw + r2, this.square.size / 4, this);
         this.objects.push(c);
+        this.updateObjects();
+    }
+
+    createTile(tileType) {
+        var hw = this.square.size / 2;
+        var r1 = (Math.random() - 0.5) * hw;
+        var r2 = (Math.random() - 0.5) * hw;
+        var theta = parseFloat(tileType);
+        var l = Math.sqrt(2) * 0.5 * this.square.size;
+        var t = new Triangle(this.square.x + hw + r1, this.square.y + hw + r2, theta, l, l)
+        this.objects.push(t);
         this.updateObjects();
     }
 
