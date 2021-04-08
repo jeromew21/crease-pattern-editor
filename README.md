@@ -4,15 +4,15 @@
 
 Circle Packing
 
+Triangle tiling
+
 ### Hopeful features
 
-Angle editing
+Line editing
 
 Grid/intersection snapping
 
-Full crease pattern generation
-
-Tiling
+Polygon tiling
 
 ## Motivation
 
