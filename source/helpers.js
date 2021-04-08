@@ -79,3 +79,28 @@ function dist(c1, c2) {
 
     return Math.sqrt(dx * dx + dy * dy);
 }
+
+function axiom4(line, pt) {
+    var x1 = line.c1.x;
+    var y1 = line.c1.y;
+    var x2 = line.c2.x;
+    var y2 = line.c2.y;
+    var x3 = pt.x;
+    var y3 = pt.y;
+
+    var m = (y2-y1) / (x2-x1);
+
+    var thresh = .001;
+
+    // Handle vert/horiz cases
+    if (Math.abs(x2-x1) < thresh) {
+        return {x : x2, y: y3};
+    } else if (Math.abs(y2-y1) < thresh) {
+        return {x: x3, y: y2};
+    }
+
+    var x = ( -y1 + y3 + m*x1 + (x3/m) ) / (m + (1/m));
+    var y = y1 + m*x - m*x1;
+
+    return {x: x, y: y};
+}

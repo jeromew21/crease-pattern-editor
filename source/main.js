@@ -42,10 +42,10 @@ class Square extends CanvasObject {
     lines() {
         var res = [];
         res.push(
-            new Line({x: 0, y: 0}, {x: 0, y: this.size}, true, true),
-            new Line({x: 0, y: 0}, {x: this.size, y: 0}, true, true),
-            new Line({x: this.size, y: 0}, {x: this.size, y: this.size}, true, true),
-            new Line({x: 0, y: this.size}, {x: this.size, y: this.size}, true, true),
+            new Line({ x: 0, y: 0 }, { x: 0, y: this.size }, true, true),
+            new Line({ x: 0, y: 0 }, { x: this.size, y: 0 }, true, true),
+            new Line({ x: this.size, y: 0 }, { x: this.size, y: this.size }, true, true),
+            new Line({ x: 0, y: this.size }, { x: this.size, y: this.size }, true, true),
         );
         return res;
     }
@@ -116,6 +116,7 @@ class Triangle extends CanvasObject {
         var c1 = pts.c1;
         var c2 = pts.c2;
         var c3 = pts.c3;
+        var incenter = pts.incenter;
 
         ctx.strokeStyle = "#000000";
         ctx.fillStyle = "#000000"
@@ -132,9 +133,47 @@ class Triangle extends CanvasObject {
         ctx.lineTo(c3.x, c3.y);
         ctx.lineTo(c1.x, c1.y);
         ctx.stroke();
+
+        ctx.strokeStyle = "#7bed9f";
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.moveTo(c2.x, c2.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.moveTo(c3.x, c3.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#ffa502";
+        ctx.beginPath();
+        var p1 = axiom4({ c1: c1, c2: c2 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p1.x, p1.y);
+        var p2 = axiom4({ c1: c1, c2: c3 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p2.x, p2.y);
+        var p3 = axiom4({ c1: c2, c2: c3 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.stroke();
+
+        // draw pivot vertex
         ctx.beginPath();
         ctx.arc(c1.x, c1.y, 2, 0, 2 * Math.PI);
         ctx.fill();
+
+        ctx.strokeStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(c1.x, c1.y, dist(c1, p1), 0, 2*Math.PI);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(c2.x, c2.y, dist(c2, p1), 0, 2*Math.PI);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(c3.x, c3.y, dist(c3, p2), 0, 2*Math.PI);
+        ctx.stroke();
     }
 
     pointsAbs() {
@@ -190,14 +229,25 @@ class Triangle extends CanvasObject {
             y: c1.y + rLength2 * Math.sin(rad),
         }
 
+        var s1 = dist(c2, c3);
+        var s2 = dist(c1, c3);
+        var s3 = dist(c1, c2);
+        var sum = s1 + s2 + s3;
+        var incenter = {
+            x: (c1.x * s1 + c2.x * s2 + c3.x * s3) / sum,
+            y: (c1.y * s1 + c2.y * s2 + c3.y * s3) / sum,
+        }
+
         // apply rotation around c1
         c2 = rotate(c2, c1, this.rotation);
         c3 = rotate(c3, c1, this.rotation);
+        incenter = rotate(incenter, c1, this.rotation);
 
         return {
             c1: c1,
             c2: c2,
-            c3: c3
+            c3: c3,
+            incenter: incenter,
         };
     }
 
@@ -248,7 +298,7 @@ class Line extends CanvasObject {
         } else {
             ctx.beginPath();
             ctx.moveTo(x0, y0);
-            ctx.lineTo(zoom*(this.c2.x + offset.x), zoom*(this.c2.y + offset.y));
+            ctx.lineTo(zoom * (this.c2.x + offset.x), zoom * (this.c2.y + offset.y));
             ctx.stroke();
         }
     }
@@ -358,8 +408,8 @@ class Canvas {
         this.squareLines = this.square.lines();
 
         this.diagonalLines = [
-            new Line({x: 0, y: 0}, {x: this.square.size, y: this.square.size}, false, true),
-            new Line({x: 0, y: this.square.size}, {x: this.square.size, y: 0}, false, true),
+            new Line({ x: 0, y: 0 }, { x: this.square.size, y: this.square.size }, false, true),
+            new Line({ x: 0, y: this.square.size }, { x: this.square.size, y: 0 }, false, true),
         ];
 
         this.gridLines = [];
@@ -454,8 +504,8 @@ class Canvas {
                 self.syncInspector();
             } if (self.globalDrag.dragging) {
                 // is dragging...?
-                var dx = (2-self.zoom) * dragRatio * (self.globalDrag.x0 - self.mouse.x);
-                var dy = (2-self.zoom) * dragRatio * (self.globalDrag.y0 - self.mouse.y);
+                var dx = (2 - self.zoom) * dragRatio * (self.globalDrag.x0 - self.mouse.x);
+                var dy = (2 - self.zoom) * dragRatio * (self.globalDrag.y0 - self.mouse.y);
 
                 self.offset.x = self.globalDrag.offsetX0 - dx;
                 self.offset.y = self.globalDrag.offsetY0 - dy;
@@ -471,6 +521,7 @@ class Canvas {
 
         var handleLeave = function (e) {
             self.globalDragStop();
+            $("html").css("cursor", "default");
         }
 
         var handleDown = function (e) {
@@ -549,11 +600,11 @@ class Canvas {
             self.selectedObject.radius = $(this).val() * self.unit * Math.sqrt(self.ui.inspector.radiusMul.val());
         });
 
-        this.ui.inspector.theta1.input.change(function() {
+        this.ui.inspector.theta1.input.change(function () {
             self.selectedObject.theta = parseFloat($(this).val());
         });
 
-        this.ui.inspector.rotation.input.change(function() {
+        this.ui.inspector.rotation.input.change(function () {
             self.selectedObject.rotation = parseFloat($(this).val());
         })
 
@@ -589,7 +640,7 @@ class Canvas {
             self.updateDiagonals();
         });
 
-        this.ui.snap.intersections.change(function() {
+        this.ui.snap.intersections.change(function () {
             if ($(this).is(':checked')) {
                 self.snap.intersections = true;
             } else {
@@ -669,8 +720,8 @@ class Canvas {
         this.diagonalLines = [];
         if (!this.diagonals) return;
         this.diagonalLines = [
-            new Line({x: 0, y: 0}, {x: this.square.size, y: this.square.size}, false, true),
-            new Line({x: 0, y: this.square.size}, {x: this.square.size, y: 0}, false, true),
+            new Line({ x: 0, y: 0 }, { x: this.square.size, y: this.square.size }, false, true),
+            new Line({ x: 0, y: this.square.size }, { x: this.square.size, y: 0 }, false, true),
         ];
     }
 
@@ -682,9 +733,9 @@ class Canvas {
         for (var i = stepSize; i < this.square.size - 1; i += stepSize) {
             //this.context.beginPath();
 
-            this.gridLines.push(new Line({x: 0, y: i}, {x: squareSize, y: i}, false, true));
-            this.gridLines.push(new Line({x: i, y: 0}, {x: i, y: squareSize}, false, true));
-            
+            this.gridLines.push(new Line({ x: 0, y: i }, { x: squareSize, y: i }, false, true));
+            this.gridLines.push(new Line({ x: i, y: 0 }, { x: i, y: squareSize }, false, true));
+
 
             //this.context.beginPath();
             // this.context.moveTo(thisv.zoom * (i + this.offset.x), this.zoom * (-overflowAmt + this.offset.y));
@@ -748,6 +799,7 @@ class Canvas {
                     this.objects.splice(ind, 1); // remove from obj list
                     this.selectObject(null); //remove selection
                     this.syncInspector();
+                    this.updateObjects();
                 }
             }
         }
