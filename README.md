@@ -1,5 +1,7 @@
 # Origami Crease Pattern Editor
 
+![screenshot](https://raw.githubusercontent.com/jeromew21/crease-pattern-editor/master/resources/2021-04-08_04-02.png)
+
 ## Features
 
 Circle Packing
