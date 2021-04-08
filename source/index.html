@@ -29,7 +29,7 @@
                     <div>
                         <label for="ui-inspector-name">Name:</label> <input type="text" name="ui-insepctor-name" id="ui-inspector-name" />
                     </div>
-                    <div>
+                    <div class="ui-row ui-circle ui-triangle">
                         <label for="ui-inspector-x">x:</label> <input type="text" name="ui-inspector-x" id="ui-inspector-x" />
                         * <select id="ui-inspector-x-mul">
                             <option value=1>1</option>
@@ -37,7 +37,7 @@
                             <option value=3>&#8730; 3</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="ui-row ui-circle ui-triangle">
                         <label for="ui-inspector-y">y:</label> <input type="text" name="ui-inspector-y" id="ui-inspector-y" />
                         * <select id="ui-inspector-y-mul">
                             <option value=1>1</option>
@@ -45,7 +45,7 @@
                             <option value=3>&#8730; 3</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="ui-row ui-circle">
                         <label for="ui-inspector-radius">Radius:</label> <input type="text" name="ui-inspector-radius" id="ui-inspector-radius"/>
                         * <select id="ui-inspector-radius-mul">
                             <option value=1>1</option>
@@ -53,7 +53,7 @@
                             <option value=3>&#8730; 3</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="ui-row ui-triangle">
                         <label for="ui-inspector-length-1">Length<sub>1</sub>:</label>
                         <input type="text" name="ui-inspector-length-1" id="ui-inspector-length-1"/>
                         * <select id="ui-inspector-length-mul-1">
@@ -62,7 +62,7 @@
                             <option value=3>&#8730; 3</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="ui-row ui-triangle">
                         <label for="ui-inspector-length-2">Length<sub>2</sub>:</label>
                         <input type="text" name="ui-inspector-length-2" id="ui-inspector-length-2"/>
                         * <select id="ui-inspector-length-mul-2">
@@ -71,20 +71,16 @@
                             <option value=3>&#8730; 3</option>
                         </select>
                     </div>
-                    <div>
-                        <label for="ui-theta-1">θ <sub>1</sub>:</label>
-                        <input name="ui-theta-1" id="ui-theta-1" type="text"/>
-                        <select id="ui-theta-1-unit">
-                            <option>°</option>
-                            <option>rad</option>
+                    <div class="ui-row ui-triangle">
+                        <label for="ui-inspector-theta-1">θ <sub>1</sub>:</label>
+                        <input name="ui-inspector-theta-1" id="ui-inspector-theta-1" type="text"/>
+                            °
                         </select>
                     </div>
-                    <div>
-                        <label for="ui-rotation">Rotation:</label>
-                        <input name="ui-rotation" id="ui-rotation" type="text"/>
-                        <select id="ui-rotation">
-                            <option>°</option>
-                            <option>rad</option>
+                    <div class="ui-row ui-triangle">
+                        <label for="ui-inspector-rotation">Rotation:</label>
+                        <input name="ui-inspector-rotation" id="ui-inspector-rotation" type="text"/>
+                            °
                         </select>
                     </div>
 
@@ -100,8 +96,8 @@
                     </div>
                     <div>
                         <select id="ui-tile-select">
-                            <option value="22.5">22.5° isoceles</option>
                             <option value="45">45° isoceles</option>
+                            <option value="90">90° isoceles</option>
                         </select>
                         <button id="ui-new-tile">New tile</button>
                     </div>
@@ -124,7 +120,7 @@
                         <label>Show square</label> <input type="checkbox" />
                     </div>
                     <div>
-                        <label>Snap to intersections</label> <input type="checkbox" />
+                        <label for="ui-snap-intersections">Snap to intersections</label> <input type="checkbox" name="ui-snap-intersections" id="ui-snap-intersections" />
                     </div>
                     <div>
                         <label>Snap to lines</label> <input type="checkbox" />
