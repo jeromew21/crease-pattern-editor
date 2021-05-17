@@ -1,7 +1,7 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #a4b0be;
+    background-color: #ffffff;
 }
 
 html {
@@ -11,11 +11,13 @@ html {
 
 #canvas-main {
     background-color: #a4b0be;
+    width: 100%;
+    height: 100%;
 }
 
 .div-ui {
     background-color: #ced6e0;
-    font-family: "Open Sans", "Noto Sans", "Segoe UI", "sans-serif";
+    font-family: "Segoe UI", "Open Sans", "Noto Sans", "sans-serif";
     margin-top: 1em;
     margin-bottom: 1em;
     padding-top: 1em;
@@ -23,7 +25,7 @@ html {
     border: 1px solid black;
 }
 
-.div-ui div {
+.div-ui > div {
     margin-bottom: 0.5em;
 }
 
