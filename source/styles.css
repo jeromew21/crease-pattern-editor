@@ -1,7 +1,8 @@
 body {
-    margin: 0;
+    margin: 1em;
     padding: 0;
-    background-color: #ffffff;
+    background-color: #f1f2f6;
+    font-family: "Segoe UI", "Open Sans", "Noto Sans", "sans-serif";
 }
 
 html {
@@ -10,19 +11,20 @@ html {
 }
 
 #canvas-main {
-    background-color: #a4b0be;
+    background-color: #ffffff;
+    margin-top: 1em;
     width: 100%;
     height: 100%;
+    border: 1px solid #ced6e0;
 }
 
 .div-ui {
-    background-color: #ced6e0;
-    font-family: "Segoe UI", "Open Sans", "Noto Sans", "sans-serif";
     margin-top: 1em;
     margin-bottom: 1em;
     padding-top: 1em;
     padding-bottom: 1em;
-    border: 1px solid black;
+    border: 1px solid #ced6e0;
+    background-color: #ffffff;
 }
 
 .div-ui > div {
