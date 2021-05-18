@@ -2,6 +2,30 @@ function nDigitRand(n) {
     return Math.floor(Math.random() * Math.pow(10, n));
 }
 
+class Button {
+    static html(domId, label, classes) {
+        return '<div class="' + classes + '">'
+            + '<button id="' + domId + '">' + label + '</button>'
+            + '</div>';
+    }
+
+    constructor(parentId, classes, label, onClick) {
+        this.labelText = label;
+        this.onClick = onClick;
+
+        var self = this;
+
+        this.domId = "ui-" + label.replace(" ", "-") + nDigitRand(3);
+        this.element = $(Button.html(this.domId, this.labelText, classes));
+
+        var parentElement = $("#" + parentId);
+        parentElement.append(this.element);
+        parentElement.on("click", "#" + this.domId, function (e) {
+            self.onClick();
+        })
+    }
+}
+
 class Checkbox {
     static html(domId, value, label, classes) {
         var checked = " ";
@@ -22,7 +46,7 @@ class Checkbox {
 
         var self = this;
 
-        this.domId = "ui-" + label + nDigitRand(3);
+        this.domId = "ui-" + label.replace(" ", "-") + nDigitRand(3);
         this.element = $(Checkbox.html(this.domId, this.value, this.labelText, classes));
 
         var parentElement = $("#" + parentId);
@@ -42,7 +66,7 @@ class SlidingInput {
         return '<div class="' + classes + '"><label for="'
             + domId
             + '">' + label + '</label>'
-            + '<input type="range" min="' + lo +'" max="' + hi + '" value="' + value + '" name="' + domId + '" id="' + domId + '" />'
+            + '<input type="range" min="' + lo + '" max="' + hi + '" value="' + value + '" name="' + domId + '" id="' + domId + '" />'
             + '&nbsp;<span id="' + domId + '-display"></span>'
             + '</div>';
     }
@@ -59,11 +83,11 @@ class SlidingInput {
 
         var self = this;
 
-        this.domId = "ui-" + label + nDigitRand(3);
+        this.domId = "ui-" + label.replace(" ", "-") + nDigitRand(3);
         this.element = $(SlidingInput.html(this.domId, this.rawValue, this.labelText, classes, this.min, this.max));
-        
+
         var displaySelector = "#" + this.domId + "-display";
-        
+
         var parentElement = $("#" + parentId);
         parentElement.append(this.element);
         parentElement.on("change", "#" + this.domId, function (e) {
@@ -76,8 +100,7 @@ class SlidingInput {
         })
 
         $(displaySelector).html(self.displayFn(this.actualValue))
-        this.onChange(this.value);
-
+        this.onChange(this.actualValue);
     }
 }
 
@@ -97,7 +120,7 @@ class NumberInput {
 
         var self = this;
 
-        this.domId = "ui-" + label + nDigitRand(3);
+        this.domId = "ui-" + label.replace(" ", "-") + nDigitRand(3);
         this.element = $(NumberInput.html(this.domId, this.value, this.labelText, classes));
 
         var parentElement = $("#" + parentId);
@@ -140,7 +163,7 @@ class FloatInput {
 
         var self = this;
 
-        this.domId = "ui-" + label + nDigitRand(3);
+        this.domId = "ui-" + label.replace(" ", "-") + nDigitRand(3);
         this.element = $(FloatInput.html(this.domId, this.value, this.labelText, classes, mul));
 
         var inputSelector = "#" + this.domId;
@@ -292,8 +315,12 @@ var n1 = new NumberInput("ui-settings", "base", "bar", 500, function (value) {
     console.log(value);
 })
 
-var n2 = new SlidingInput("ui-settings", "base", "zoom", 100, 1, 200, 0.01, function(value) {
-    return (Math.round(value*100)) + "%";
-}, function(value) {
+var n2 = new SlidingInput("ui-settings", "base", "zoom", 100, 1, 200, 0.01, function (value) {
+    return (Math.round(value * 100)) + "%";
+}, function (value) {
     console.log(value);
+})
+
+var b12 = new Button("ui-settings", "base", "click me", function () {
+    console.log("ow")
 })
