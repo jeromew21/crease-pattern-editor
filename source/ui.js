@@ -134,6 +134,42 @@ class SlidingInput {
     }
 }
 
+class StringInput {
+    static html(domId, value, label, classes) {
+        return '<div class="' + classes + '"><label for="'
+            + domId
+            + '">' + label + '</label>'
+            + '<input type="text" value="' + value + '" name="' + domId + '" id="' + domId + '" />'
+            + '</div>';
+    }
+
+    constructor(parentId, classes, label, value, onChange) {
+        this.labelText = label + ":&nbsp;";
+        this.value = value;
+        this.onChange = onChange;
+
+        var self = this;
+
+        this.domId = "ui-" + label.replaceAll(" ", "-") + nDigitRand(3);
+        this.element = $(StringInput.html(this.domId, this.value, this.labelText, classes));
+
+        var parentElement = $("#" + parentId);
+        parentElement.append(this.element);
+        parentElement.on("change", "#" + this.domId, function (e) {
+            var val = $(e.target).val();
+            self.value = val;
+            self.onChange(val);
+        })
+
+        this.onChange(value);
+    }
+
+    set(value) {
+        this.value = value;
+        $("#" + this.domId).val(value);
+    }
+}
+
 class NumberInput {
     static html(domId, value, label, classes) {
         return '<div class="' + classes + '"><label for="'
@@ -221,6 +257,11 @@ class FloatInput {
         }
 
         this.onChange(this.actualValue);
+    }
 
+    set(value) {
+        this.actualValue = parseFloat(value);
+        this.value = value / this.multiplier;
+        $("#" + this.domId).val(this.value)
     }
 }

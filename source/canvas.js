@@ -41,6 +41,7 @@ class Canvas {
         }
 
         this.tool = Canvas.tools.hand;
+        this.switchTool(Canvas.tools.hand);
 
         this.mouse = {
             x: 0,
@@ -59,15 +60,23 @@ class Canvas {
             x0: 0,
             y0: 0,
             dragging: false
-        }
+        };
 
         this.circles = {
             show: true,
-            radius: 100,
+            radius: Canvas.unit / 10,
+        };
+
+        this.triangles = {
+            length: Canvas.unit / 2,
         }
+
+        this.inspector = {};
 
         this.initUi();
         this.bindEvents();
+
+        this.updateInspector();
     }
 
     bindEvents() {
@@ -86,8 +95,8 @@ class Canvas {
             self.canvas.style.width = self.canvas.width + "px";
 
             // Mega increase pixel density of canvas
-            self.canvas.height = Math.round(self.canvas.height*pdr);
-            self.canvas.width = Math.round(self.canvas.width*pdr);   
+            self.canvas.height = Math.round(self.canvas.height * pdr);
+            self.canvas.width = Math.round(self.canvas.width * pdr);
 
             var xt = self.canvas.width / 2 - (Canvas.unit / 2);
             var yt = self.canvas.height / 2 - (Canvas.unit / 2);
@@ -108,8 +117,8 @@ class Canvas {
 
         var handleMove = function (e) {
             var rect = self.canvas.getBoundingClientRect();
-            self.mouse.x = (pdr)*(e.clientX - rect.left) - self.translation.x;
-            self.mouse.y = (pdr)*(e.clientY - rect.top) - self.translation.y;
+            self.mouse.x = (pdr) * (e.clientX - rect.left) - self.translation.x;
+            self.mouse.y = (pdr) * (e.clientY - rect.top) - self.translation.y;
 
             if (self.objectDrag.dragging) {
                 var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
@@ -120,6 +129,8 @@ class Canvas {
                     obj.x = obj.x0 - dx;
                     obj.y = obj.y0 - dy;
                 }
+
+                self.updateInspector();
             }
             if (self.globalDrag.dragging) {
                 // is dragging...?
@@ -131,10 +142,21 @@ class Canvas {
             } else {
                 // set cursor depending on object underneath
                 if (self.tool == Canvas.tools.hand) {
-                    if (self.getObjectUnderneath(self.mouse) == self.paper) {
-                        $("html").css("cursor", "default");
+                    if (self.objectDrag.dragging) {
+                        $("html").css("cursor", "move");
                     } else {
-                        $("html").css("cursor", "pointer");
+                        var obj = self.getObjectUnderneath(self.mouse);
+                        if (obj == self.paper) {
+                            $("html").css("cursor", "default");
+                        } else if (obj == null) {
+                            $("html").css("cursor", "default");
+                        } else if (obj instanceof Circle) {
+                            if (keyRegister.Control) {
+                                $("html").css("cursor", "pointer");
+                            } else {
+                                $("html").css("cursor", "default");
+                            }
+                        }
                     }
                 }
             }
@@ -168,6 +190,11 @@ class Canvas {
                 var y = (self.mouse.y / self.zoom) - self.offset.y;
                 var c = new Circle(x, y, self.circles.radius, self);
                 self.objects.push(c);
+            } else if (self.tool == Canvas.tools.triangle) {
+                var x = (self.mouse.x / self.zoom) - self.offset.x;
+                var y = (self.mouse.y / self.zoom) - self.offset.y;
+                var t = new Triangle(x, y, 45, self.triangles.length, self.triangles.length, 0, self);
+                self.objects.push(t);
             }
         }
 
@@ -181,13 +208,14 @@ class Canvas {
             self.zoomElement.set(self.zoomElement.actualValue + d);
         }
 
-
         this.canvas.addEventListener("mousemove", handleMove);
         this.canvas.addEventListener("mousedown", handleDown);
         this.canvas.addEventListener("mouseup", handleUp);
         this.canvas.addEventListener("mouseleave", handleLeave);
         this.canvas.addEventListener("wheel", handleWheel);
+
         document.onkeydown = function (e) {
+            // console.log(e.key);
             keyRegister[e.key] = true;
             canvas.handleKeys();
         }
@@ -250,6 +278,36 @@ class Canvas {
             self.offset.y = 0;
         })
 
+        this.inspector = {
+            name: new StringInput("ui-inspector", "inspector circle triangle", "Name", "", function (value) {
+                self.setInspectorAttr("name", value);
+            }),
+
+            x: new FloatInput("ui-inspector", "inspector circle triangle", "x", 0, true, function (value) {
+                self.setInspectorAttr("x", value * Canvas.unit);
+            }),
+
+            y: new FloatInput("ui-inspector", "inspector circle triangle", "y", 0, true, function (value) {
+                self.setInspectorAttr("y", value * Canvas.unit);
+            }),
+
+            radius: new FloatInput("ui-inspector", "inspector circle circle-multi", "Radius", 0, true, function (value) {
+                self.setInspectorAttr("radius", value * Canvas.unit);
+            }),
+
+            l1: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "l1", 0, true, function (value) {
+                self.setInspectorAttr("l1", value * Canvas.unit);
+            }),
+
+            l2: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "l2", 0, true, function (value) {
+                self.setInspectorAttr("l2", value * Canvas.unit);
+            }),
+
+            lock: new Checkbox("ui-inspector", "inspector circle triangle", "Lock", false, function (value) {
+                self.setInspectorAttr("lock", value);
+            }),
+        }
+
         new Checkbox("ui-settings", "base", "Show circles", true, function (value) {
             self.circles.show = value;
         });
@@ -310,6 +368,14 @@ class Canvas {
 
     switchTool(tool) {
         this.tool = tool;
+            $(".ui-tool").hide();
+        if (tool == Canvas.tools.hand) {
+            // pass
+        } else if (tool == Canvas.tools.circle) {
+            $("#ui-circle-tool").show();
+        } else if (tool == Canvas.tools.triangle) {
+            $("#ui-triangle-tool").show();
+        }
     }
 
     dragStop() {
@@ -351,7 +417,6 @@ class Canvas {
 
     draw() {
         this.context.clearRect(-Canvas.unit, -Canvas.unit, this.canvas.width + Canvas.unit, this.canvas.height + Canvas.unit);
-        this.updateObjects();
         if (this.paper.show) {
             this.objects[0].draw(); // square 
         }
@@ -382,33 +447,83 @@ class Canvas {
 
     clickObject(obj) {
         if (keyRegister.Shift) {
-            if (!this.selectedObjects.includes(obj)) {
-                obj.isSelected = true;
-                this.selectedObjects.push(obj);
-            } else {
+            // toggle selected or not, then exit
+            if (this.selectedObjects.includes(obj)) {
                 obj.isSelected = false;
                 this.selectedObjects.remove(obj);
-                return; // end here
+            } else {
+                obj.isSelected = true;
+                this.selectedObjects.push(obj);
             }
         } else {
             if (this.selectedObjects.includes(obj)) {
                 // pass
+                // we go to drag
             } else {
                 // select only obj
                 this.deselect();
                 obj.isSelected = true;
                 this.selectedObjects = [obj];
             }
+            if (keyRegister.Control) {
+                // init drag
+                for (var i = 0; i < this.selectedObjects.length; i++) {
+                    var selObj = this.selectedObjects[i];
+                    selObj.x0 = selObj.x;
+                    selObj.y0 = selObj.y;
+                }
+                this.objectDrag.x0 = this.mouse.x;
+                this.objectDrag.y0 = this.mouse.y;
+                this.objectDrag.dragging = true;
+            }
         }
-        // init drag
-        for (var i = 0; i < this.selectedObjects.length; i++) {
-            var selObj = this.selectedObjects[i];
-            selObj.x0 = selObj.x;
-            selObj.y0 = selObj.y;
+        this.updateInspector();
+    }
+
+    setInspectorAttr(attrName, value) {
+        if (this.selectedObjects.length == 1) {
+            var obj = this.selectedObjects[0];
+            obj[attrName] = value;
+        } else if (this.selectedObjects.length > 1 && allSameType(this.selectedObjects)) {
+            // multi elements
+            for (var i = 0; i < this.selectedObjects.length; i++) {
+                var obj = this.selectedObjects[i];
+                obj[attrName] = value;
+            }
         }
-        this.objectDrag.x0 = this.mouse.x;
-        this.objectDrag.y0 = this.mouse.y;
-        this.objectDrag.dragging = true;
+    }
+
+    updateInspector() {
+        if (this.selectedObjects.length == 1) {
+            this.showInspector();
+            var obj = this.selectedObjects[0];
+
+            $(".inspector").hide(); // hide all inputs
+
+
+            if (obj instanceof Circle) {
+                $("." + "circle").show();
+                this.inspector.radius.set(obj.radius / Canvas.unit);
+            } else if (obj instanceof Triangle) {
+                $("." + "triangle").show();
+
+            }
+
+            this.inspector.name.set(obj.name());
+            this.inspector.x.set(obj.x / Canvas.unit);
+            this.inspector.y.set(obj.y / Canvas.unit);
+        } else if (this.selectedObjects.length > 1 && allSameType(this.selectedObjects)) {
+            // multiple elements...
+            $(".inspector").hide(); // hide all inputs
+            var obj = this.selectedObjects[0]; 
+            if (obj instanceof Circle) {
+                $(".circle-multi").show();
+            } else if (obj instanceof Triangle) {
+                $(".triangle-multi").show();
+            }
+        } else {
+            this.hideInspector();
+        }
     }
 
     deselect() {
@@ -416,11 +531,31 @@ class Canvas {
             this.objects[i].isSelected = false;
         }
         this.selectedObjects = [];
+        this.updateInspector();
+    }
+
+    hideInspector() {
+        $("#ui-inspector").hide();
+    }
+
+    showInspector() {
+        $("#ui-inspector").show();
     }
 
     handleKeys() {
+        if (keyRegister.Control && this.tool == Canvas.tools.hand) {
+            var obj = this.getObjectUnderneath(this.mouse);
+            if (obj instanceof Circle) {
+                $("html").css("cursor", "pointer");
+            }
+        }
+
         if (keyRegister.Delete) {
             this.delete();
+        } else if ((keyRegister.Control && (keyRegister.Shift && keyRegister.z)) || (keyRegister.Control && keyRegister.y)) {
+            this.redo();
+        } else if (keyRegister.Control && keyRegister.z) {
+            this.undo();
         }
     }
 
@@ -435,31 +570,20 @@ class Canvas {
         }
     }
 
-    updateObjects() {
-        for (var i = 0; i < this.objects.length; i++) {
-            var obj = this.objects[i];
-            obj.update();
-        }
-    }
-
     drawGrid() {
         // TODO: increase lines to outside of paper or filling the window
         var squareSize = this.paper.height;
         var stepSize = squareSize / this.grid.count;
         var overflowAmt = 500;
-        this.context.strokeStyle = "#000000";
-        this.context.lineWidth = 0.5;
+        this.context.strokeStyle = Paper.outline;
+        this.context.lineWidth = penSize.line;
         this.context.beginPath();
         for (var i = stepSize; i < squareSize - 1; i += stepSize) {
-            //this.context.beginPath();
             this.context.moveTo(this.renderX(-overflowAmt), this.renderY(i));
             this.context.lineTo(this.renderX(squareSize + overflowAmt), this.renderY(i));
-            //this.context.stroke();
 
-            //this.context.beginPath();
             this.context.moveTo(this.renderX(i), this.renderY(-overflowAmt));
             this.context.lineTo(this.renderX(i), this.renderY(squareSize + overflowAmt));
-            //this.context.stroke();
         }
         this.context.stroke();
     }

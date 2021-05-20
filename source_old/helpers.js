@@ -1,12 +1,6 @@
 const dragRatio = 1;
 const moveVelocity = 1;
 const rotationVelocity = .2;
-const pdr = 2;
-const fuzzyThreshold = 1.0;
-
-var penSize = {
-    line: 2,
-}
 
 var keyRegister = {
     w: false,
@@ -15,19 +9,19 @@ var keyRegister = {
     d: false,
     q: false,
     e: false,
-    z: false,
-    y: false,
-    Control: false,
-    Delete: false,
-    Shift: false,
+    Delete: false
 };
+
+document.onkeydown = function (e) {
+    keyRegister[e.key] = true;
+}
+
+document.onkeyup = function (e) {
+    keyRegister[e.key] = false;
+}
 
 function degToRad(theta) {
     return theta * (Math.PI / 180);
-}
-
-function fuzzyEquals(x, y) {
-    return Math.abs(x - y) < fuzzyThreshold;
 }
 
 function rotate(coords, origin, theta) {
@@ -84,6 +78,18 @@ function dist(c1, c2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+function bindCheckbox(domObj, startingValue, onTrue, onFalse) {
+    //if (startingValue) { onTrue() } else { onFalse() }
+    domObj.prop('checked', startingValue); 
+    domObj.change(function() {
+        if ($(this).is(':checked')) {
+            onTrue();
+        } else {
+            onFalse();
+        }
+    })
+}
+
 /**
  * For a line l and a point p, find point p1 that lies on l and creates a line perp to l with p 
  */
@@ -111,20 +117,3 @@ function axiom4(line, pt) {
 
     return { x: x, y: y };
 }
-
-function strokeCircle(ctx, coords, r) {
-    ctx.beginPath();
-    ctx.arc(coords.x, coords.y, r, 0, 2*Math.PI);
-    ctx.stroke();
-}
-
-Array.prototype.remove = function() {
-    var what, a = arguments, L = a.length, ax;
-    while (L && this.length) {
-        what = a[--L];
-        while ((ax = this.indexOf(what)) !== -1) {
-            this.splice(ax, 1);
-        }
-    }
-    return this;
-};

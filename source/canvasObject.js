@@ -20,7 +20,6 @@ class CanvasObject {
         return [];
     }
 
-    update() { }
 
     xRel() {
         return this.canvas.renderX(this.x);
@@ -36,9 +35,13 @@ class CanvasObject {
 
     isPointInside(coords) { }
 
-    delete() { 
+    delete() {
         this.alive = false;
         this.isSelected = false;
+    }
+
+    getType() {
+        return "CanvasObject";
     }
 
     draw() { }
@@ -46,7 +49,7 @@ class CanvasObject {
 
 class Paper extends CanvasObject {
     static bg = '#f1f2f6';
-    static outline = '#000000';
+    static outline = '#a4b0be';
 
     constructor(width, height, canvas) {
         super(0, 0, canvas);
@@ -69,6 +72,8 @@ class Paper extends CanvasObject {
     isPointInside(coords) {
         return inBounds(coords, this.rectBounds());
     }
+
+    getType() { return "Paper"; }
 
     draw() {
         var ctx = this.canvas.ctx;
@@ -107,7 +112,8 @@ class Paper extends CanvasObject {
 class Circle extends CanvasObject {
     static circleCount = 0;
     static pink = "#ff4757";
-    static black = "#000000"
+    static black = "#000000";
+    static blue = "#3742fa";
 
     constructor(x, y, r, canvas) {
         super(x, y, canvas);
@@ -117,23 +123,12 @@ class Circle extends CanvasObject {
         Circle.circleCount += 1;
     }
 
+    getType() { return "Circle"; }
+
     name() {
         return this.name_;
     }
 
-    // sets the state of an object
-    update() {
-        for (var i = 0; i < this.canvas.objects.length; i++) {
-            var obj = this.canvas.objects[i];
-            if (obj instanceof Circle && obj != this) {
-                if (dist(this.coords, obj.coords) < this.radius + obj.radius) {
-                    this.color = Circle.pink;
-                    return;
-                }
-            }
-        }
-        this.color = Circle.black;
-    }
 
     isPointInside(coords,) {
         var dx = coords.x - this.xRel();
@@ -144,8 +139,29 @@ class Circle extends CanvasObject {
 
     draw() {
         var ctx = this.canvas.context;
+        this.color = Circle.black;
+        for (var i = 0; i < this.canvas.objects.length; i++) {
+            var obj = this.canvas.objects[i];
+            if (obj instanceof Circle && obj != this && obj.alive) {
+                var d = dist(this.coords, obj.coords);
+                var touchDist = this.radius + obj.radius;
+                if (d < touchDist) {
+                    this.color = Circle.pink;
+                } else if (fuzzyEquals(d, touchDist)) {
+                    ctx.lineWidth = penSize.line;
+                    ctx.strokeStyle = Circle.blue;
+                    ctx.beginPath();
+                    ctx.moveTo(this.xRel(), this.yRel());
+                    ctx.lineTo(obj.xRel(), obj.yRel());
+                    ctx.stroke();
+                }
+            }
+        }
+
+        var dotRad = 1;
         if (this.isSelected) {
-            ctx.lineWidth = 2;
+            ctx.lineWidth = penSize.line * 3;
+            dotRad = 2;
         } else {
             ctx.lineWidth = penSize.line;
         }
@@ -158,9 +174,258 @@ class Circle extends CanvasObject {
             ctx.arc(this.xRel(), this.yRel(), r, 0, 2 * Math.PI);
             ctx.stroke();
         }
+
         ctx.beginPath();
-        ctx.arc(this.xRel(), this.yRel(), 1, 0, 2 * Math.PI);
+        ctx.arc(this.xRel(), this.yRel(), dotRad, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
     }
+}
+
+class Line extends CanvasObject {
+    constructor(c1, c2, infinite, visible) {
+        super(c1.x, c1.y);
+        this.c1 = c1;
+        this.c2 = c2;
+        this.infinite = infinite;
+        this.visible = visible;
+    }
+
+    name() { return "<line>"; }
+
+    isPointInside(coords, offset, zoom) {
+        return false;
+    }
+
+    getType() { return "Line"; }
+
+    draw(ctx, offset, zoom) {
+        if (!this.visible) { return; }
+        var x0 = this.xRel(offset, zoom);
+        var y0 = this.yRel(offset, zoom);
+        var theta = Math.atan(this.slope);
+        ctx.strokeStyle = "#FF0000";
+        ctx.lineWidth = 1;
+        if (this.infinite && false) {
+            // var L = 10000;
+            // var x1 = (this.x + L * Math.cos(theta) + offset.x)*zoom;
+            // var y1 = (this.y + L * Math.sin(theta) + offset.y)*zoom;
+            // var x2 = (this.x - L * Math.cos(theta) + offset.x)*zoom;
+            // var y2 = (this.y - L * Math.sin(theta) + offset.y)*zoom;
+            // ctx.beginPath();
+            // ctx.moveTo(x0, y0);
+            // ctx.lineTo(x1, y1);
+            // ctx.moveTo(x0, y0);
+            // ctx.lineTo(x2, y2);
+            // ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(zoom * (this.c2.x + offset.x), zoom * (this.c2.y + offset.y));
+            ctx.stroke();
+        }
+    }
+}
+
+
+class Triangle extends CanvasObject {
+    static count = 0;
+
+    constructor(x, y, theta, l1, l2, rotation, canvas) {
+        super(x, y, canvas);
+        // SAS (side-angle-side)
+        this.theta = theta; // in degrees
+        this.l1 = l1;
+        this.l2 = l2;
+        this.rotation = rotation;
+        this.name_ = "triangle" + Triangle.count;
+        Triangle.count += 1;
+        this.isSelected = false;
+    }
+
+    getType() { return "Triangle"; }
+
+    lines() {
+        var pts = this.pointsAbs();
+        var c1 = pts.c1;
+        var c2 = pts.c2;
+        var c3 = pts.c3;
+        return [
+            new Line(c1, c2, false, true),
+            new Line(c2, c3, false, true),
+            new Line(c3, c1, false, true)
+        ];
+    }
+
+
+    draw() {
+        var ctx = this.canvas.context;
+        var zoom = this.canvas.zoom;
+        var offset = this.canvas.offset;
+
+        var pts = this.points(offset, zoom);
+        var c1 = pts.c1;
+        var c2 = pts.c2;
+        var c3 = pts.c3;
+        var incenter = pts.incenter;
+
+        ctx.strokeStyle = "#000000";
+        ctx.fillStyle = "#000000"
+
+        if (this.isSelected) {
+            ctx.lineWidth = penSize.line * 3;
+        } else {
+            ctx.lineWidth = penSize.line;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(c1.x, c1.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#7bed9f";
+        ctx.beginPath();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.moveTo(c2.x, c2.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.moveTo(c3.x, c3.y);
+        ctx.lineTo(incenter.x, incenter.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#ffa502";
+        ctx.beginPath();
+        var p1 = axiom4({ c1: c1, c2: c2 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p1.x, p1.y);
+        var p2 = axiom4({ c1: c1, c2: c3 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p2.x, p2.y);
+        var p3 = axiom4({ c1: c2, c2: c3 }, incenter);
+        ctx.moveTo(incenter.x, incenter.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.stroke();
+
+        // draw pivot vertex
+        ctx.beginPath();
+        ctx.arc(c1.x, c1.y, 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        if (this.canvas.circles.show) {
+            ctx.strokeStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(c1.x, c1.y, dist(c1, p1), 0, 2 * Math.PI);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(c2.x, c2.y, dist(c2, p1), 0, 2 * Math.PI);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(c3.x, c3.y, dist(c3, p2), 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+    }
+
+    pointsAbs() {
+        var rLength1 = this.l1;
+        var rLength2 = this.l2;
+
+        var c1 = {
+            x: this.x,
+            y: this.y
+        }
+
+        var c2 = {
+            x: c1.x + rLength1,
+            y: c1.y
+        }
+
+        var rad = degToRad(this.theta);
+
+        var c3 = {
+            x: c1.x + rLength2 * Math.cos(rad),
+            y: c1.y + rLength2 * Math.sin(rad),
+        }
+
+        // apply rotation around c1
+        c2 = rotate(c2, c1, this.rotation);
+        c3 = rotate(c3, c1, this.rotation);
+
+        return {
+            c1: c1,
+            c2: c2,
+            c3: c3
+        };
+    }
+
+    points() {
+        var zoom = this.canvas.zoom;
+        var offset = this.canvas.offset;
+
+        var rLength1 = this.l1 * zoom;
+        var rLength2 = this.l2 * zoom;
+
+        var c1 = {
+            x: this.xRel(),
+            y: this.yRel()
+        }
+
+        var c2 = {
+            x: c1.x + rLength1,
+            y: c1.y
+        }
+
+        var rad = degToRad(this.theta);
+
+        var c3 = {
+            x: c1.x + rLength2 * Math.cos(rad),
+            y: c1.y + rLength2 * Math.sin(rad),
+        }
+
+        var s1 = dist(c2, c3);
+        var s2 = dist(c1, c3);
+        var s3 = dist(c1, c2);
+        var sum = s1 + s2 + s3;
+        var incenter = {
+            x: (c1.x * s1 + c2.x * s2 + c3.x * s3) / sum,
+            y: (c1.y * s1 + c2.y * s2 + c3.y * s3) / sum,
+        }
+
+        // apply rotation around c1
+        c2 = rotate(c2, c1, this.rotation);
+        c3 = rotate(c3, c1, this.rotation);
+        incenter = rotate(incenter, c1, this.rotation);
+
+        return {
+            c1: c1,
+            c2: c2,
+            c3: c3,
+            incenter: incenter,
+        };
+    }
+
+    isPointInside(coords) {
+        var zoom = this.canvas.zoom;
+        var offset = this.canvas.offset;
+
+        var pts = this.points(offset, zoom);
+        var c1 = pts.c1;
+        var c2 = pts.c2;
+        var c3 = pts.c3;
+
+        return inBoundsTriangle(coords, c1, c2, c3);
+    }
+}
+
+function allSameType(objList) {
+    var typ = objList[0].getType();
+    for (var i = 0; i < objList.length; i++) {
+        if (objList[i].getType() != typ) {
+            return false;
+        }
+    }
+    return true;
 }
