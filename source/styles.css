@@ -1,7 +1,7 @@
 body {
     margin: 1em;
     padding: 0;
-    background-color: #f1f2f6;
+    background-color: #dfe4ea;
     font-family: "Segoe UI", "Open Sans", "Noto Sans", "sans-serif";
 }
 
@@ -16,6 +16,7 @@ html {
     width: 100%;
     height: 100%;
     border: 1px solid #ced6e0;
+    border-radius: 3px;
 }
 
 .div-ui {
@@ -25,6 +26,7 @@ html {
     padding-bottom: 1em;
     border: 1px solid #ced6e0;
     background-color: #ffffff;
+    border-radius: 3px;
 }
 
 .div-ui > div {

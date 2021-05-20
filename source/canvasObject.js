@@ -2,9 +2,13 @@ class CanvasObject {
     constructor(x, y, canvas) {
         this.x = x;
         this.y = y;
+        this.x0 = x;
+        this.y0 = y;
+        this.alive = true;
         this.canvas = canvas;
         this.locked = false;
         this.name_ = "<abstract canvas object>"
+        this.isSelected = false;
     }
 
     name() {
@@ -31,6 +35,11 @@ class CanvasObject {
     }
 
     isPointInside(coords) { }
+
+    delete() { 
+        this.alive = false;
+        this.isSelected = false;
+    }
 
     draw() { }
 }
@@ -104,7 +113,6 @@ class Circle extends CanvasObject {
         this.radius = r;
         this.name_ = "circle" + Circle.circleCount;
         this.color = Circle.black
-        this.isSelected = false;
         Circle.circleCount += 1;
     }
 
@@ -114,8 +122,8 @@ class Circle extends CanvasObject {
 
     // sets the state of an object
     update() {
-        for (var i = 0; i < this.parent.objects.length; i++) {
-            var obj = this.parent.objects[i];
+        for (var i = 0; i < this.canvas.objects.length; i++) {
+            var obj = this.canvas.objects[i];
             if (obj instanceof Circle && obj != this) {
                 if (dist(this.coords, obj.coords) < this.radius + obj.radius) {
                     this.color = Circle.pink;
@@ -126,14 +134,15 @@ class Circle extends CanvasObject {
         this.color = Circle.black;
     }
 
-    isPointInside(coords, offset, zoom) {
-        var dx = coords.x - this.xRel(offset, zoom);
-        var dy = coords.y - this.yRel(offset, zoom);
+    isPointInside(coords,) {
+        var dx = coords.x - this.xRel();
+        var dy = coords.y - this.yRel();
 
-        return Math.sqrt(dx * dx + dy * dy) < this.radius * zoom;
+        return Math.sqrt(dx * dx + dy * dy) < this.radius * this.canvas.zoom;
     }
 
     draw() {
+        var ctx = this.canvas.context;
         if (this.isSelected) {
             ctx.lineWidth = 2;
         } else {

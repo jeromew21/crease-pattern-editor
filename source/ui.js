@@ -106,7 +106,7 @@ class SlidingInput {
         this.domId = "ui-" + label.replaceAll(" ", "-") + nDigitRand(3);
         this.element = $(SlidingInput.html(this.domId, this.rawValue, this.labelText, classes, this.min, this.max));
 
-        var displaySelector = "#" + this.domId + "-display";
+        this.displaySelector = "#" + this.domId + "-display";
 
         var parentElement = $("#" + parentId);
         parentElement.append(this.element);
@@ -116,11 +116,21 @@ class SlidingInput {
             self.rawValue = rawVal;
             self.actualValue = val;
             self.onChange(val);
-            $(displaySelector).html(self.displayFn(val))
+            $(self.displaySelector).html(self.displayFn(val))
         })
 
-        $(displaySelector).html(self.displayFn(this.actualValue))
+        $(this.displaySelector).html(self.displayFn(this.actualValue))
         this.onChange(this.actualValue);
+    }
+
+    set(value) {
+        var val = value / this.multiplier;
+        if (val < this.min || val > this.max) { return; }
+        this.actualValue = value;
+        this.rawValue = val;
+        $("#" + this.domId).val(this.rawValue);
+        this.onChange(this.actualValue);
+        $(this.displaySelector).html(this.displayFn(this.actualValue));
     }
 }
 
