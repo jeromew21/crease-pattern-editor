@@ -5,6 +5,7 @@ class Canvas {
         triangle: 3,
     };
 
+    /* The length of the paper as rendered on screen */
     static unit = 500;
 
     constructor(canvas) {
@@ -24,8 +25,19 @@ class Canvas {
 
         this.selectedObjects = [];
 
+        this.actions = {
+            stack: [],
+            allocation: 1000,
+            index: 0
+        }
+
+        for (var i = 0; i < this.actions.allocation; i++) {
+            this.actions.stack.push(null);
+        }
+
         this.grid = {
             show: false,
+            count: 8
         }
 
         this.tool = Canvas.tools.hand;
@@ -70,9 +82,12 @@ class Canvas {
             // fix height and width permanently
             self.canvas.style.height = self.canvas.height + "px";
             self.canvas.style.width = self.canvas.width + "px";
-            
+
             var xt = self.canvas.width / 2 - (Canvas.unit / 2);
             var yt = self.canvas.height / 2 - (Canvas.unit / 2);
+
+            xt = Math.floor(xt) + 0.5;
+            yt = Math.floor(yt) + 0.5;
 
             self.translation.x = xt;
             self.translation.y = yt;
@@ -254,12 +269,32 @@ class Canvas {
         })
     }
 
-    undo() {
+    renderX(x) {
+        return Math.floor(this.zoom * (this.offset.x + x));
+    }
 
+    renderY(y) {
+        return Math.floor(this.zoom * (this.offset.y + y))
+    }
+
+    undo() {
+        if (this.actions.index > 0) {
+            this.actions.index -= 1;
+            var action = this.actions.stack[this.actions.index];
+            action.invert();
+        } else {
+            console.log("Undo operation not permitted")
+        }
     }
 
     redo() {
-
+        var action = this.actions.stack[this.actions.index];
+        if (action != null) {
+            this.actions.index += 1;
+            action.apply();
+        } else {
+            console.log("Redo operation not permitted")
+        }
     }
 
     delete() {
@@ -281,6 +316,20 @@ class Canvas {
             this.objectDrag.dragging = false;
             this.objectDrag.obj0 = [];
             // add to motion stack...
+            var subActions = [];
+            for (var i = 0; i < this.selectedObjects.length; i++) {
+                var obj = this.selectedObjects[i];
+                subActions.push(
+                    new MovementAction(obj, {
+                        x: obj.x0,
+                        y: obj.y0,
+                    }, {
+                        x: obj.x,
+                        y: obj.y
+                    })
+                )
+            }
+            this.addAction(new MultiAction(subActions));
         }
     }
 
@@ -297,8 +346,14 @@ class Canvas {
     }
 
     draw() {
-        this.context.clearRect(-500, -500, this.canvas.width + 500, this.canvas.height + 500);
-        for (var i = 0; i < this.objects.length; i++) {
+        this.context.clearRect(-Canvas.unit, -Canvas.unit, this.canvas.width + Canvas.unit, this.canvas.height + Canvas.unit);
+        if (this.paper.show) {
+            this.objects[0].draw(); // square 
+        }
+        if (this.grid.show) {
+            this.drawGrid();
+        }
+        for (var i = 1; i < this.objects.length; i++) {
             var obj = this.objects[i];
             if (!obj.alive) continue;
 
@@ -362,6 +417,39 @@ class Canvas {
         if (keyRegister.Delete) {
             this.delete();
         }
+    }
+
+    addAction(action) {
+        this.actions.stack[this.actions.index] = action;
+        this.actions.index++;
+        this.actions.stack[this.actions.index] = null;
+        if (this.actions.index >= this.actions.allocation) {
+            for (var i = 0; i < this.actions.allocation; i++) {
+                this.actions.stack.push(null);
+            }
+        }
+    }
+
+    drawGrid() {
+        // TODO: increase lines to outside of paper or filling the window
+        var squareSize = this.paper.height;
+        var stepSize = squareSize / this.grid.count;
+        var overflowAmt = 500;
+        this.context.strokeStyle = "#000000";
+        this.context.lineWidth = 0.5;
+        this.context.beginPath();
+        for (var i = stepSize; i < squareSize - 1; i += stepSize) {
+            //this.context.beginPath();
+            this.context.moveTo(this.renderX(-overflowAmt), this.renderY(i));
+            this.context.lineTo(this.renderX(squareSize + overflowAmt), this.renderY(i));
+            //this.context.stroke();
+
+            //this.context.beginPath();
+            this.context.moveTo(this.renderX(i), this.renderY(-overflowAmt));
+            this.context.lineTo(this.renderX(i), this.renderY(squareSize + overflowAmt));
+            //this.context.stroke();
+        }
+        this.context.stroke();
     }
 
     get ctx() {

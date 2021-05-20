@@ -23,11 +23,11 @@ class CanvasObject {
     update() { }
 
     xRel() {
-        return (this.x + this.canvas.offset.x) * this.canvas.zoom;
+        return this.canvas.renderX(this.x);
     }
 
     yRel() {
-        return (this.y + this.canvas.offset.y) * this.canvas.zoom;
+        return this.canvas.renderY(this.y);
     }
 
     get coords() {
@@ -54,6 +54,7 @@ class Paper extends CanvasObject {
         this.height = height;
         this.name_ = "paper";
         this.showDiagonals = true;
+        this.show = true;
     }
 
     rectBounds() {
