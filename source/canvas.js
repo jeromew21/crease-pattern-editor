@@ -5,14 +5,20 @@ class Canvas {
         triangle: 3,
     };
 
+    static unit = 500;
+
     constructor(canvas) {
         this.canvas = canvas;
         this.context = null;
 
-        this.zoom = 1;
-        this.offset = { x: 50, y: 50 };
+        this.translation = {
+            x: 0, y: 0
+        };
 
-        this.paper = new Paper(500, 500, this);
+        this.zoom = 1;
+        this.offset = { x: 0, y: 0 };
+
+        this.paper = new Paper(Canvas.unit, Canvas.unit, this);
 
         this.objects = [this.paper];
 
@@ -55,11 +61,6 @@ class Canvas {
     bindEvents() {
         var self = this;
 
-        this.translation = {
-            x: 400.5,
-            y: 100.5,
-        }
-
         var resize = function () {
             self.canvas.style.height = "100%";
             self.canvas.style.width = "100%";
@@ -69,9 +70,15 @@ class Canvas {
             // fix height and width permanently
             self.canvas.style.height = self.canvas.height + "px";
             self.canvas.style.width = self.canvas.width + "px";
+            
+            var xt = self.canvas.width / 2 - (Canvas.unit / 2);
+            var yt = self.canvas.height / 2 - (Canvas.unit / 2);
+
+            self.translation.x = xt;
+            self.translation.y = yt;
 
             self.context = self.canvas.getContext('2d');
-            self.context.translate(self.translation.x, self.translation.y);
+            self.context.translate(xt, yt);
             self.context.ImageSmoothingEnabled = false;
         }
 
@@ -84,8 +91,8 @@ class Canvas {
             self.mouse.y = e.clientY - rect.top - self.translation.y;
 
             if (self.objectDrag.dragging) {
-                var dx = dragRatio * (self.objectDrag.x0 - self.mouse.x);
-                var dy = dragRatio * (self.objectDrag.y0 - self.mouse.y);
+                var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
+                var dy = (1 / self.zoom) * dragRatio * (self.objectDrag.y0 - self.mouse.y);
 
                 for (var i = 0; i < self.selectedObjects.length; i++) {
                     var obj = self.selectedObjects[i];
@@ -199,7 +206,7 @@ class Canvas {
 
         });
 
-        new MenuAction("edit-menu-list", "De-select", function () {
+        new MenuAction("edit-menu-list", "Clear selection", function () {
             self.deselect();
         });
 
@@ -220,8 +227,8 @@ class Canvas {
         });
 
         new MenuAction("view-menu-list", "Re-center", function () {
-            self.offset.x = 50;
-            self.offset.y = 50;
+            self.offset.x = 0;
+            self.offset.y = 0;
         })
 
         new Checkbox("ui-settings", "base", "Show circles", true, function (value) {
@@ -243,7 +250,7 @@ class Canvas {
         });
 
         new FloatInput("ui-circle-tool", "base", "Radius", 0.25, true, function (value) {
-            self.circles.radius = value * 500;
+            self.circles.radius = value * Canvas.unit;
         })
     }
 
