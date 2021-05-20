@@ -1,6 +1,11 @@
 const dragRatio = 1;
 const moveVelocity = 1;
 const rotationVelocity = .2;
+const pdr = 2;
+
+var penSize = {
+    line: 2,
+}
 
 var keyRegister = {
     w: false,

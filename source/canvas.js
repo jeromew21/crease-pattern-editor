@@ -6,7 +6,7 @@ class Canvas {
     };
 
     /* The length of the paper as rendered on screen */
-    static unit = 500;
+    static unit = 1000;
 
     constructor(canvas) {
         this.canvas = canvas;
@@ -77,11 +77,17 @@ class Canvas {
             self.canvas.style.height = "100%";
             self.canvas.style.width = "100%";
 
+            // Set initial w/h based on style
             self.canvas.height = self.canvas.offsetHeight;
             self.canvas.width = self.canvas.offsetWidth;
-            // fix height and width permanently
+
+            // fix height and width permanently (probably does nothing)
             self.canvas.style.height = self.canvas.height + "px";
             self.canvas.style.width = self.canvas.width + "px";
+
+            // Mega increase pixel density of canvas
+            self.canvas.height = Math.round(self.canvas.height*pdr);
+            self.canvas.width = Math.round(self.canvas.width*pdr);   
 
             var xt = self.canvas.width / 2 - (Canvas.unit / 2);
             var yt = self.canvas.height / 2 - (Canvas.unit / 2);
@@ -102,8 +108,8 @@ class Canvas {
 
         var handleMove = function (e) {
             var rect = self.canvas.getBoundingClientRect();
-            self.mouse.x = e.clientX - rect.left - self.translation.x;
-            self.mouse.y = e.clientY - rect.top - self.translation.y;
+            self.mouse.x = (pdr)*(e.clientX - rect.left) - self.translation.x;
+            self.mouse.y = (pdr)*(e.clientY - rect.top) - self.translation.y;
 
             if (self.objectDrag.dragging) {
                 var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
@@ -114,8 +120,6 @@ class Canvas {
                     obj.x = obj.x0 - dx;
                     obj.y = obj.y0 - dy;
                 }
-
-                // self.updateObjects();
             }
             if (self.globalDrag.dragging) {
                 // is dragging...?
@@ -347,6 +351,7 @@ class Canvas {
 
     draw() {
         this.context.clearRect(-Canvas.unit, -Canvas.unit, this.canvas.width + Canvas.unit, this.canvas.height + Canvas.unit);
+        this.updateObjects();
         if (this.paper.show) {
             this.objects[0].draw(); // square 
         }
@@ -427,6 +432,13 @@ class Canvas {
             for (var i = 0; i < this.actions.allocation; i++) {
                 this.actions.stack.push(null);
             }
+        }
+    }
+
+    updateObjects() {
+        for (var i = 0; i < this.objects.length; i++) {
+            var obj = this.objects[i];
+            obj.update();
         }
     }
 

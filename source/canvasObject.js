@@ -79,7 +79,7 @@ class Paper extends CanvasObject {
         ctx.beginPath();
         ctx.fillRect(this.xRel(), this.yRel(), w, h);
         ctx.stroke();
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = penSize.line;
         ctx.strokeRect(this.xRel(), this.yRel(), w, h);
 
         if (this.showDiagonals) {
@@ -147,7 +147,7 @@ class Circle extends CanvasObject {
         if (this.isSelected) {
             ctx.lineWidth = 2;
         } else {
-            ctx.lineWidth = 1;
+            ctx.lineWidth = penSize.line;
         }
         ctx.strokeStyle = this.color;
         ctx.fillStyle = this.color;
