@@ -9,10 +9,15 @@ class CanvasObject {
         this.locked = false;
         this.name_ = "<abstract canvas object>"
         this.isSelected = false;
+        this.selectable = true;
     }
 
     name() {
         return this.name_;
+    }
+
+    copy() {
+        return {};
     }
 
     /* Return a list of lines for snapping */
@@ -58,6 +63,7 @@ class Paper extends CanvasObject {
         this.name_ = "paper";
         this.showDiagonals = true;
         this.show = true;
+        this.selectable = false;
     }
 
     rectBounds() {
@@ -76,6 +82,10 @@ class Paper extends CanvasObject {
     getType() { return "Paper"; }
 
     draw() {
+        if (!this.show) {
+            return;
+        }
+        
         var ctx = this.canvas.ctx;
         var w = this.width * this.canvas.zoom;
         var h = this.height * this.canvas.zoom;
@@ -129,6 +139,9 @@ class Circle extends CanvasObject {
         return this.name_;
     }
 
+    copy() {
+        return new Circle(this.x, this.y, this.radius, this.canvas);
+    }
 
     isPointInside(coords,) {
         var dx = coords.x - this.xRel();
@@ -227,9 +240,13 @@ class Line extends CanvasObject {
     }
 }
 
+class Tile extends CanvasObject {
 
-class Triangle extends CanvasObject {
+}
+
+class Triangle extends Tile {
     static count = 0;
+    static black = '#000000';
 
     constructor(x, y, theta, l1, l2, rotation, canvas) {
         super(x, y, canvas);
@@ -241,6 +258,10 @@ class Triangle extends CanvasObject {
         this.name_ = "triangle" + Triangle.count;
         Triangle.count += 1;
         this.isSelected = false;
+    }
+
+    copy() {
+        return new Triangle(this.x, this.y, this.theta, this.l1, this.l2, this.rotation, this.canvas);
     }
 
     getType() { return "Triangle"; }
@@ -269,8 +290,8 @@ class Triangle extends CanvasObject {
         var c3 = pts.c3;
         var incenter = pts.incenter;
 
-        ctx.strokeStyle = "#000000";
-        ctx.fillStyle = "#000000"
+        ctx.strokeStyle = Triangle.black;
+        ctx.fillStyle = Triangle.black; 
 
         if (this.isSelected) {
             ctx.lineWidth = penSize.line * 3;
@@ -278,12 +299,7 @@ class Triangle extends CanvasObject {
             ctx.lineWidth = penSize.line;
         }
 
-        ctx.beginPath();
-        ctx.moveTo(c1.x, c1.y);
-        ctx.lineTo(c2.x, c2.y);
-        ctx.lineTo(c3.x, c3.y);
-        ctx.lineTo(c1.x, c1.y);
-        ctx.stroke();
+        
 
         ctx.strokeStyle = "#7bed9f";
         ctx.beginPath();
@@ -296,22 +312,34 @@ class Triangle extends CanvasObject {
         ctx.stroke();
 
         ctx.strokeStyle = "#ffa502";
-        ctx.beginPath();
         var p1 = axiom4({ c1: c1, c2: c2 }, incenter);
+        ctx.beginPath();
         ctx.moveTo(incenter.x, incenter.y);
         ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+        
         var p2 = axiom4({ c1: c1, c2: c3 }, incenter);
+        ctx.beginPath();
         ctx.moveTo(incenter.x, incenter.y);
         ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        ctx.lineWidth = ctx.lineWidth * 2; 
         var p3 = axiom4({ c1: c2, c2: c3 }, incenter);
+        ctx.beginPath();
         ctx.moveTo(incenter.x, incenter.y);
         ctx.lineTo(p3.x, p3.y);
         ctx.stroke();
-
-        // draw pivot vertex
+        ctx.lineWidth = ctx.lineWidth / 2; 
+        
+        ctx.strokeStyle = Triangle.black;
         ctx.beginPath();
-        ctx.arc(c1.x, c1.y, 2, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.moveTo(c1.x, c1.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.lineTo(c3.x, c3.y);
+        ctx.lineTo(c1.x, c1.y);
+        ctx.lineTo(c2.x, c2.y);
+        ctx.stroke();
 
         if (this.canvas.circles.show) {
             ctx.strokeStyle = "#000000";

@@ -77,7 +77,13 @@ class Checkbox {
             self.onChange(val);
         })
 
+        $("#" + this.domId).prop('checked', this.value);
         this.onChange(this.value);
+    }
+
+    set(value) {
+        this.value = value;
+        $("#" + this.domId).prop('checked', value);
     }
 }
 

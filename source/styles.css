@@ -10,7 +10,7 @@ html {
     padding: 0;
 }
 
-#canvas-main {
+.canvas-main {
     background-color: #ffffff;
     margin-top: 1em;
     width: 100%;

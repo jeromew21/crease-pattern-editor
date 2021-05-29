@@ -1,7 +1,6 @@
 const dragRatio = 1;
 const moveVelocity = 1;
 const rotationVelocity = .2;
-const pdr = 2;
 const fuzzyThreshold = 1.0;
 
 var penSize = {

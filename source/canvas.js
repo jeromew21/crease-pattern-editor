@@ -12,6 +12,8 @@ class Canvas {
         this.canvas = canvas;
         this.context = null;
 
+        this.pdr = 2;
+
         this.translation = {
             x: 0, y: 0
         };
@@ -95,8 +97,8 @@ class Canvas {
             self.canvas.style.width = self.canvas.width + "px";
 
             // Mega increase pixel density of canvas
-            self.canvas.height = Math.round(self.canvas.height * pdr);
-            self.canvas.width = Math.round(self.canvas.width * pdr);
+            self.canvas.height = Math.round(self.canvas.height * self.pdr);
+            self.canvas.width = Math.round(self.canvas.width * self.pdr);
 
             var xt = self.canvas.width / 2 - (Canvas.unit / 2);
             var yt = self.canvas.height / 2 - (Canvas.unit / 2);
@@ -117,8 +119,8 @@ class Canvas {
 
         var handleMove = function (e) {
             var rect = self.canvas.getBoundingClientRect();
-            self.mouse.x = (pdr) * (e.clientX - rect.left) - self.translation.x;
-            self.mouse.y = (pdr) * (e.clientY - rect.top) - self.translation.y;
+            self.mouse.x = (self.pdr) * (e.clientX - rect.left) - self.translation.x;
+            self.mouse.y = (self.pdr) * (e.clientY - rect.top) - self.translation.y;
 
             if (self.objectDrag.dragging) {
                 var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
@@ -150,12 +152,8 @@ class Canvas {
                             $("html").css("cursor", "default");
                         } else if (obj == null) {
                             $("html").css("cursor", "default");
-                        } else if (obj instanceof Circle) {
-                            if (keyRegister.Control) {
-                                $("html").css("cursor", "pointer");
-                            } else {
-                                $("html").css("cursor", "default");
-                            }
+                        } else if (obj instanceof Circle || obj instanceof Triangle) {
+                            $("html").css("cursor", "default");
                         }
                     }
                 }
@@ -168,15 +166,13 @@ class Canvas {
         }
 
         var handleDown = function (e) {
-            if (self.tool == Canvas.tools.hand) {
-                var obj = self.getObjectUnderneath(self.mouse);
-                if (obj != null) {
-                    if (obj instanceof Paper) {
-                        self.deselect();
-                    } else {
-                        self.clickObject(obj);
-                    }
-                } else if (!self.globalDrag.dragging) {
+            if (e.which == 3) {
+                e.preventDefault();
+                return;
+            }
+
+            if (e.which == 2) {
+                if (self.tool == Canvas.tools.hand && !self.globalDrag.dragging) {
                     // init global drag
                     self.globalDrag.dragging = true;
                     self.globalDrag.x0 = self.mouse.x;
@@ -184,6 +180,16 @@ class Canvas {
                     self.globalDrag.offsetX0 = self.offset.x;
                     self.globalDrag.offsetY0 = self.offset.y;
                     $("html").css("cursor", "move");
+                }
+                return;
+            }
+
+            if (self.tool == Canvas.tools.hand) {
+                var obj = self.getObjectUnderneath(self.mouse);
+                if (obj != null) {
+                    self.clickObject(obj);
+                } else {
+                    self.deselect();
                 }
             } else if (self.tool == Canvas.tools.circle) {
                 var x = (self.mouse.x / self.zoom) - self.offset.x;
@@ -213,6 +219,7 @@ class Canvas {
         this.canvas.addEventListener("mouseup", handleUp);
         this.canvas.addEventListener("mouseleave", handleLeave);
         this.canvas.addEventListener("wheel", handleWheel);
+        this.canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return false; });
 
         document.onkeydown = function (e) {
             // console.log(e.key);
@@ -228,6 +235,7 @@ class Canvas {
 
     initUi() {
         var self = this;
+        this.zoomElement = null;
 
         new Button("toolbox", "base", "🤚", function () {
             self.switchTool(Canvas.tools.hand);
@@ -249,8 +257,31 @@ class Canvas {
 
         });
 
-        new MenuAction("file-menu-list", "Export", function () {
+        new MenuAction("file-menu-list", "Export square", function () {
+            self.zoomElement.set(1);
+            self.offset.x = 0;
+            self.offset.y = 0;
+            self.draw();
 
+            var canv2 = document.getElementById("canvas-secondary");
+            canv2.width = self.paper.width;
+            canv2.height = self.paper.height;
+            var ctx2 = canv2.getContext('2d');
+            ctx2.drawImage(self.canvas, self.translation.x, self.translation.y, canv2.width, canv2.height, 0, 0, canv2.width, canv2.height);
+            var dataUrl = canv2.toDataURL("image/png");
+            window.open(dataUrl);
+        });
+
+        new MenuAction("edit-menu-list", "Select all", function () {
+            self.deselect();
+            for (var i = 0; i < self.objects.length; i++) {
+                var obj = self.objects[i];
+                obj.isSelected = true;
+                if (obj.selectable) {
+                    self.selectedObjects.push(obj);
+                }
+            }
+            self.updateInspector();
         });
 
         new MenuAction("edit-menu-list", "Clear selection", function () {
@@ -261,6 +292,14 @@ class Canvas {
             self.delete();
         });
 
+        new MenuAction("edit-menu-list", "Duplicate", function () {
+            for (var i = 0; i < self.selectedObjects.length; i++) {
+                var clone = self.selectedObjects[i].copy();
+                self.objects.push(clone);
+            }
+        });
+
+
         new MenuAction("edit-menu-list", "Undo", function () {
             self.undo();
         });
@@ -270,7 +309,7 @@ class Canvas {
         });
 
         new MenuAction("help-menu-list", "About", function () {
-
+            window.open("https://github.com/jeromew21/crease-pattern-editor")
         });
 
         new MenuAction("view-menu-list", "Re-center", function () {
@@ -303,10 +342,22 @@ class Canvas {
                 self.setInspectorAttr("l2", value * Canvas.unit);
             }),
 
+            theta: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "theta", 0, false, function (value) {
+                self.setInspectorAttr("theta", value);
+            }),
+
+            rotation: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "rotation", 0, false, function (value) {
+                self.setInspectorAttr("rotation", value);
+            }),
+
             lock: new Checkbox("ui-inspector", "inspector circle triangle", "Lock", false, function (value) {
-                self.setInspectorAttr("lock", value);
+                self.setInspectorAttr("locked", value);
             }),
         }
+
+        new Checkbox("ui-settings", "base", "Show paper", true, function (value) {
+            self.paper.show = value;
+        });
 
         new Checkbox("ui-settings", "base", "Show circles", true, function (value) {
             self.circles.show = value;
@@ -368,7 +419,7 @@ class Canvas {
 
     switchTool(tool) {
         this.tool = tool;
-            $(".ui-tool").hide();
+        $(".ui-tool").hide();
         if (tool == Canvas.tools.hand) {
             // pass
         } else if (tool == Canvas.tools.circle) {
@@ -380,9 +431,10 @@ class Canvas {
 
     dragStop() {
         if (this.globalDrag.dragging) {
-            this.globalDrag.dragging = false;
             $("html").css("cursor", "default");
+            this.globalDrag.dragging = false;
         } else if (this.objectDrag.dragging) {
+            $("html").css("cursor", "default");
             this.objectDrag.dragging = false;
             this.objectDrag.obj0 = [];
             // add to motion stack...
@@ -446,6 +498,11 @@ class Canvas {
     }
 
     clickObject(obj) {
+        if (obj instanceof Paper) {
+            this.deselect();
+            return;
+        }
+
         if (keyRegister.Shift) {
             // toggle selected or not, then exit
             if (this.selectedObjects.includes(obj)) {
@@ -465,8 +522,15 @@ class Canvas {
                 obj.isSelected = true;
                 this.selectedObjects = [obj];
             }
-            if (keyRegister.Control) {
-                // init drag
+            // init drag
+            var anyLocked = false;
+            for (var i = 0; i < this.selectedObjects.length; i++) {
+                if (this.selectedObjects[i].locked) {
+                    anyLocked = true;
+                    break;
+                }
+            }
+            if (!anyLocked) {
                 for (var i = 0; i < this.selectedObjects.length; i++) {
                     var selObj = this.selectedObjects[i];
                     selObj.x0 = selObj.x;
@@ -506,16 +570,20 @@ class Canvas {
                 this.inspector.radius.set(obj.radius / Canvas.unit);
             } else if (obj instanceof Triangle) {
                 $("." + "triangle").show();
-
+                this.inspector.l1.set(obj.l1 / Canvas.unit);
+                this.inspector.l2.set(obj.l2 / Canvas.unit);
+                this.inspector.theta.set(obj.theta);
+                this.inspector.rotation.set(obj.rotation);
             }
 
             this.inspector.name.set(obj.name());
             this.inspector.x.set(obj.x / Canvas.unit);
             this.inspector.y.set(obj.y / Canvas.unit);
+            this.inspector.lock.set(obj.locked);
         } else if (this.selectedObjects.length > 1 && allSameType(this.selectedObjects)) {
             // multiple elements...
             $(".inspector").hide(); // hide all inputs
-            var obj = this.selectedObjects[0]; 
+            var obj = this.selectedObjects[0];
             if (obj instanceof Circle) {
                 $(".circle-multi").show();
             } else if (obj instanceof Triangle) {
@@ -545,7 +613,7 @@ class Canvas {
     handleKeys() {
         if (keyRegister.Control && this.tool == Canvas.tools.hand) {
             var obj = this.getObjectUnderneath(this.mouse);
-            if (obj instanceof Circle) {
+            if (obj instanceof Circle || obj instanceof Triangle) {
                 $("html").css("cursor", "pointer");
             }
         }
@@ -556,6 +624,14 @@ class Canvas {
             this.redo();
         } else if (keyRegister.Control && keyRegister.z) {
             this.undo();
+        } else if (keyRegister.d) {
+
+        } else if (keyRegister.w) {
+
+        } else if (keyRegister.s) {
+
+        } else if (keyRegister.a) {
+
         }
     }
 
