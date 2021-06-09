@@ -10,6 +10,8 @@ class Canvas {
 
     constructor(canvas) {
         this.canvas = canvas;
+        this.canvas.setAttribute("tabindex", "0");
+
         this.context = null;
 
         this.pdr = 2;
@@ -122,7 +124,10 @@ class Canvas {
         var self = this;
 
 
-        window.onresize = this.resize;
+        window.onresize = function() {
+            self.resize();
+        };
+
         this.resize();
 
         var handleMove = function (e) {
@@ -229,13 +234,13 @@ class Canvas {
         this.canvas.addEventListener("wheel", handleWheel);
         this.canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return false; });
 
-        document.onkeydown = function (e) {
+        this.canvas.addEventListener("keydown", function (e) {
             // console.log(e.key);
             e.preventDefault();
             keyRegister[e.key] = true;
             canvas.handleKeys();
             return false;
-        }
+        })
 
         document.onkeyup = function (e) {
             e.preventDefault();
@@ -482,9 +487,6 @@ class Canvas {
                 this.updateInspector();
             }
 
-
-
-
             $("html").css("cursor", "default");
             this.objectDrag.dragging = false;
             this.objectDrag.obj0 = [];
@@ -676,10 +678,18 @@ class Canvas {
 
     calculateSnapPoints() {
         var pts = [];
+
+        // corners
         pts.push({x: 0, y: 0});
         pts.push({x: Canvas.unit, y: Canvas.unit});
         pts.push({x: Canvas.unit, y: 0});
         pts.push({x: 0, y: Canvas.unit});
+
+        if (this.paper.showDiagonals) {
+            pts.push({x: Canvas.unit / 2, y: Canvas.unit / 2})
+        }
+
+        // grid snap points
         return pts;
     }
 
