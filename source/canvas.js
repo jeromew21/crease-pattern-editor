@@ -405,6 +405,13 @@ class Canvas {
         return Math.floor(this.zoom * (this.offset.y + y))
     }
 
+    renderCoord(c) {
+        return {
+            x: this.renderX(c.x),
+            y: this.renderY(c.y)
+        };
+    }
+
     undo() {
         if (this.actions.index > 0) {
             this.actions.index -= 1;

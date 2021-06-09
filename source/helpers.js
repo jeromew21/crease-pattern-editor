@@ -83,6 +83,17 @@ function dist(c1, c2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+function triangleCenter(c1, c2, c3) {
+    var s1 = dist(c2, c3);
+    var s2 = dist(c1, c3);
+    var s3 = dist(c1, c2);
+    var sum = s1 + s2 + s3;
+    return {
+        x: (c1.x * s1 + c2.x * s2 + c3.x * s3) / sum,
+        y: (c1.y * s1 + c2.y * s2 + c3.y * s3) / sum,
+    }
+}
+
 /**
  * For a line l and a point p, find point p1 that lies on l and creates a line perp to l with p 
  */
@@ -113,11 +124,11 @@ function axiom4(line, pt) {
 
 function strokeCircle(ctx, coords, r) {
     ctx.beginPath();
-    ctx.arc(coords.x, coords.y, r, 0, 2*Math.PI);
+    ctx.arc(coords.x, coords.y, r, 0, 2 * Math.PI);
     ctx.stroke();
 }
 
-Array.prototype.remove = function() {
+Array.prototype.remove = function () {
     var what, a = arguments, L = a.length, ax;
     while (L && this.length) {
         what = a[--L];
