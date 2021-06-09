@@ -76,6 +76,10 @@ function inBoundsTriangle(pt, v1, v2, v3) {
 }
 
 
+function norm(c) {
+    return Math.sqrt(c.x*c.x + c.y*c.y)
+}
+
 function dist(c1, c2) {
     var dx = c1.x - c2.x;
     var dy = c1.y - c2.y;
@@ -127,3 +131,35 @@ Array.prototype.remove = function() {
     }
     return this;
 };
+
+/**
+ * for grid snapping, this function takes two lists of coordinates
+ * and returns the min pair as well as the delta cross lists.
+ */
+function minPair(objCoords, snapCoords) {
+    // return 3 objects: objCoord, snapCoord, and delta b/t them
+    var minDist = Infinity;
+    var oC = objCoords[0];
+    var sC = snapCoords[0];
+    for (var i = 0; i < objCoords.length; i++) {
+        var objCoord = objCoords[i];
+        for (var k = 0; k < snapCoords.length; k++) {
+            var snapCoord = snapCoords[k];
+            var d = dist(objCoord, snapCoord);
+            if (d < minDist) {
+                minDist = d;
+                oC = objCoord;
+                sC = snapCoord;
+            }
+        }
+    }
+
+    return {
+        objCoord: oC,
+        snapCoord: sC,
+        delta: {
+            x: sC.x - oC.x,
+            y: sC.y - oC.y
+        }
+    }
+}

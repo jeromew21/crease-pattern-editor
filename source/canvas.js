@@ -73,6 +73,11 @@ class Canvas {
             length: Canvas.unit / 2,
         }
 
+        this.snap = {
+            enabled: true,
+            distance: 20
+        }
+
         this.inspector = {};
 
         this.initUi();
@@ -223,12 +228,16 @@ class Canvas {
 
         document.onkeydown = function (e) {
             // console.log(e.key);
+            e.preventDefault();
             keyRegister[e.key] = true;
             canvas.handleKeys();
+            return false;
         }
 
         document.onkeyup = function (e) {
+            e.preventDefault();
             keyRegister[e.key] = false;
+            return false;
         }
 
     }
@@ -273,15 +282,8 @@ class Canvas {
         });
 
         new MenuAction("edit-menu-list", "Select all", function () {
-            self.deselect();
-            for (var i = 0; i < self.objects.length; i++) {
-                var obj = self.objects[i];
-                obj.isSelected = true;
-                if (obj.selectable) {
-                    self.selectedObjects.push(obj);
-                }
-            }
-            self.updateInspector();
+            self.selectAll();
+
         });
 
         new MenuAction("edit-menu-list", "Clear selection", function () {
@@ -355,6 +357,10 @@ class Canvas {
             }),
         }
 
+        new Checkbox("ui-settings", "base", "Snap intersections", self.snap.enabled, function(value) {
+            self.snap.enabled = true;
+        });
+
         new Checkbox("ui-settings", "base", "Show paper", true, function (value) {
             self.paper.show = value;
         });
@@ -367,11 +373,15 @@ class Canvas {
             self.grid.show = value;
         });
 
+        new NumberInput("ui-settings", "base", "Grid denomination", this.grid.count, function(value) {
+            self.grid.count = value;
+        })
+
         new Checkbox("ui-settings", "base", "Show main diagonals", true, function (value) {
             self.paper.showDiagonals = value;
         });
 
-        this.zoomElement = new SlidingInput("ui-settings", "base", "Zoom", 100, 1, 300, .01, function (value) {
+        this.zoomElement = new SlidingInput("ui-settings", "base", "Zoom", 100, 1, 1000, .01, function (value) {
             return Math.round(value * 100) + "%";
         }, function (value) {
             self.zoom = value;
@@ -434,6 +444,25 @@ class Canvas {
             $("html").css("cursor", "default");
             this.globalDrag.dragging = false;
         } else if (this.objectDrag.dragging) {
+            // handle snap here
+            var objCoords = [];
+            for (var i = 0; i < this.selectedObjects.length; i++) {
+                objCoords.push(...this.selectedObjects[i].points());
+            }
+            var mp = minPair(objCoords, this.calculateSnapPoints());
+            var delta = mp.delta;
+            if (norm(delta) < this.snap.distance) {
+                for (var i = 0; i < this.selectedObjects.length; i++) {
+                    var obj = this.selectedObjects[i];
+                    obj.x += delta.x;
+                    obj.y += delta.y; 
+                }
+                this.updateInspector();
+            }
+
+
+
+
             $("html").css("cursor", "default");
             this.objectDrag.dragging = false;
             this.objectDrag.obj0 = [];
@@ -594,6 +623,19 @@ class Canvas {
         }
     }
 
+    selectAll() {
+        var self = this;
+        self.deselect();
+        for (var i = 0; i < self.objects.length; i++) {
+            var obj = self.objects[i];
+            obj.isSelected = true;
+            if (obj.selectable) {
+                self.selectedObjects.push(obj);
+            }
+        }
+        self.updateInspector();
+    }
+
     deselect() {
         for (var i = 0; i < this.objects.length; i++) {
             this.objects[i].isSelected = false;
@@ -610,12 +652,18 @@ class Canvas {
         $("#ui-inspector").show();
     }
 
+    calculateSnapPoints() {
+        var pts = [];
+        pts.push({x: 0, y: 0});
+        pts.push({x: Canvas.unit, y: Canvas.unit});
+        pts.push({x: Canvas.unit, y: 0});
+        pts.push({x: 0, y: Canvas.unit});
+        return pts;
+    }
+
     handleKeys() {
-        if (keyRegister.Control && this.tool == Canvas.tools.hand) {
-            var obj = this.getObjectUnderneath(this.mouse);
-            if (obj instanceof Circle || obj instanceof Triangle) {
-                $("html").css("cursor", "pointer");
-            }
+        if (keyRegister.Control && keyRegister.a) {
+            this.selectAll();
         }
 
         if (keyRegister.Delete) {

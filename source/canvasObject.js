@@ -20,6 +20,10 @@ class CanvasObject {
         return {};
     }
 
+    points() {
+        return [];
+    }
+
     /* Return a list of lines for snapping */
     lines() {
         return [];
@@ -85,7 +89,7 @@ class Paper extends CanvasObject {
         if (!this.show) {
             return;
         }
-        
+
         var ctx = this.canvas.ctx;
         var w = this.width * this.canvas.zoom;
         var h = this.height * this.canvas.zoom;
@@ -139,11 +143,15 @@ class Circle extends CanvasObject {
         return this.name_;
     }
 
+    points() {
+        return [{x: this.x, y: this.y}]
+    }
+
     copy() {
         return new Circle(this.x, this.y, this.radius, this.canvas);
     }
 
-    isPointInside(coords,) {
+    isPointInside(coords) {
         var dx = coords.x - this.xRel();
         var dy = coords.y - this.yRel();
 
