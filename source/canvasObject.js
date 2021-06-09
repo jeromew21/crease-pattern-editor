@@ -307,8 +307,6 @@ class Triangle extends Tile {
             ctx.lineWidth = penSize.line;
         }
 
-        
-
         ctx.strokeStyle = "#7bed9f";
         ctx.beginPath();
         ctx.moveTo(c1.x, c1.y);

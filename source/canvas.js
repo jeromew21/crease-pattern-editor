@@ -86,41 +86,44 @@ class Canvas {
         this.updateInspector();
     }
 
+    resize() {
+        var self = this;
+        self.canvas.style.height = "100%";
+        self.canvas.style.width = "100%";
+
+        // Set initial w/h based on style
+        self.canvas.height = self.canvas.offsetHeight;
+        self.canvas.width = self.canvas.offsetWidth;
+
+        // fix height and width permanently (probably does nothing)
+        self.canvas.style.height = self.canvas.height + "px";
+        self.canvas.style.width = self.canvas.width + "px";
+
+        // Mega increase pixel density of canvas
+        self.canvas.height = Math.round(self.canvas.height * self.pdr);
+        self.canvas.width = Math.round(self.canvas.width * self.pdr);
+
+        var xt = self.canvas.width / 2 - (Canvas.unit / 2);
+        var yt = self.canvas.height / 2 - (Canvas.unit / 2);
+
+        // Make sure that we're on a 0.5 factor
+        xt = Math.floor(xt) + 0.5;
+        yt = Math.floor(yt) + 0.5;
+
+        self.translation.x = xt;
+        self.translation.y = yt;
+
+        self.context = self.canvas.getContext('2d');
+        self.context.translate(xt, yt);
+        self.context.ImageSmoothingEnabled = false;
+    }
+
     bindEvents() {
         var self = this;
 
-        var resize = function () {
-            self.canvas.style.height = "100%";
-            self.canvas.style.width = "100%";
 
-            // Set initial w/h based on style
-            self.canvas.height = self.canvas.offsetHeight;
-            self.canvas.width = self.canvas.offsetWidth;
-
-            // fix height and width permanently (probably does nothing)
-            self.canvas.style.height = self.canvas.height + "px";
-            self.canvas.style.width = self.canvas.width + "px";
-
-            // Mega increase pixel density of canvas
-            self.canvas.height = Math.round(self.canvas.height * self.pdr);
-            self.canvas.width = Math.round(self.canvas.width * self.pdr);
-
-            var xt = self.canvas.width / 2 - (Canvas.unit / 2);
-            var yt = self.canvas.height / 2 - (Canvas.unit / 2);
-
-            xt = Math.floor(xt) + 0.5;
-            yt = Math.floor(yt) + 0.5;
-
-            self.translation.x = xt;
-            self.translation.y = yt;
-
-            self.context = self.canvas.getContext('2d');
-            self.context.translate(xt, yt);
-            self.context.ImageSmoothingEnabled = false;
-        }
-
-        window.onresize = resize;
-        resize();
+        window.onresize = this.resize;
+        this.resize();
 
         var handleMove = function (e) {
             var rect = self.canvas.getBoundingClientRect();
@@ -390,6 +393,18 @@ class Canvas {
         new FloatInput("ui-circle-tool", "base", "Radius", 0.25, true, function (value) {
             self.circles.radius = value * Canvas.unit;
         })
+        
+        new SlidingInput("ui-settings", "advanced", "Pixel density", this.pdr, 1, 4, 1, function (value) { return value; }, function (value) {
+            self.pdr = value;
+            self.resize();
+        });
+
+        new Button("ui-settings", "base button-advanced", "Show advanced", function(){
+            $(".button-advanced").hide();
+            $(".advanced").show();
+        })
+
+        $(".advanced").hide();
     }
 
     renderX(x) {

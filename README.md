@@ -2,6 +2,8 @@
 
 ![screenshot](https://raw.githubusercontent.com/jeromew21/crease-pattern-editor/master/resources/2021-04-08_04-02.png)
 
+[Live demo?](https://jerome.cloud/demos/crease-pattern-editor/)
+
 ## Features
 
 Circle Packing
