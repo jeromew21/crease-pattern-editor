@@ -77,7 +77,7 @@ function inBoundsTriangle(pt, v1, v2, v3) {
 
 
 function norm(c) {
-    return Math.sqrt(c.x*c.x + c.y*c.y)
+    return Math.sqrt(c.x * c.x + c.y * c.y)
 }
 
 function dist(c1, c2) {
@@ -132,6 +132,21 @@ function strokeCircle(ctx, coords, r) {
     ctx.stroke();
 }
 
+function drawX(ctx, coords, r) {
+    var x = coords.x;
+    var y = coords.y;
+
+    ctx.lineWidth = penSize.line;
+    ctx.strokeStyle = "#ff0000";
+
+    ctx.beginPath();
+    ctx.moveTo(x - r, y - r);
+    ctx.lineTo(x + r, y + r);
+    ctx.moveTo(x - r, y + r);
+    ctx.lineTo(x + r, y - r);
+    ctx.stroke();
+}
+
 Array.prototype.remove = function () {
     var what, a = arguments, L = a.length, ax;
     while (L && this.length) {
@@ -146,6 +161,8 @@ Array.prototype.remove = function () {
 /**
  * for grid snapping, this function takes two lists of coordinates
  * and returns the min pair as well as the delta cross lists.
+ * 
+ * TODO: Optimize. Currently runs O(mn).
  */
 function minPair(objCoords, snapCoords) {
     // return 3 objects: objCoord, snapCoord, and delta b/t them

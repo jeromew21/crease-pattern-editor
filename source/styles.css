@@ -34,6 +34,6 @@ html {
     margin-bottom: 0.5em;
 }
 
-input[type="text"], input[type=number] {
-    width: 10em;
+.number-input {
+    width: 7em;
 }

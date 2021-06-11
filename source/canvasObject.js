@@ -306,7 +306,7 @@ class Triangle extends Tile {
 
 
     draw() {
-        var pts = this.points();
+        var pts = this.pointsRel();
         var ctx = this.canvas.context;
         var c1 = pts.c1;
         var c2 = pts.c2;
@@ -378,6 +378,11 @@ class Triangle extends Tile {
         }
     }
 
+    points() {
+        var pts = this.pointsAbs();
+        return [pts.c1, pts.c2, pts.c3];
+    }
+
     // The original points in absolute (actual) terms.
     pointsAbs() {
         if (this.method == Triangle.method.COORDS) {
@@ -416,7 +421,7 @@ class Triangle extends Tile {
     }
 
     // The rendered, relative points.
-    points() {
+    pointsRel() {
         if (this.method == Triangle.method.COORDS) {
             var c1 = this.threeCoords.c1;
             var c2 = this.threeCoords.c2;
@@ -478,7 +483,7 @@ class Triangle extends Tile {
         var zoom = this.canvas.zoom;
         var offset = this.canvas.offset;
 
-        var pts = this.points(offset, zoom);
+        var pts = this.pointsRel();
         var c1 = pts.c1;
         var c2 = pts.c2;
         var c3 = pts.c3;

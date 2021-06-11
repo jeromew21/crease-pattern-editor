@@ -120,57 +120,102 @@ class Canvas {
         self.context.ImageSmoothingEnabled = false;
     }
 
+    mouseMove(e) {
+        var self = this;
+        var rect = self.canvas.getBoundingClientRect();
+        self.mouse.x = (self.pdr) * (e.clientX - rect.left) - self.translation.x;
+        self.mouse.y = (self.pdr) * (e.clientY - rect.top) - self.translation.y;
+
+        if (self.objectDrag.dragging) {
+            var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
+            var dy = (1 / self.zoom) * dragRatio * (self.objectDrag.y0 - self.mouse.y);
+
+            for (var i = 0; i < self.selectedObjects.length; i++) {
+                var obj = self.selectedObjects[i];
+                obj.x = obj.x0 - dx;
+                obj.y = obj.y0 - dy;
+            }
+
+            self.updateInspector();
+        }
+        if (self.globalDrag.dragging) {
+            // is dragging...?
+            var dx = (1 / self.zoom) * dragRatio * (self.globalDrag.x0 - self.mouse.x);
+            var dy = (1 / self.zoom) * dragRatio * (self.globalDrag.y0 - self.mouse.y);
+
+            self.offset.x = self.globalDrag.offsetX0 - dx;
+            self.offset.y = self.globalDrag.offsetY0 - dy;
+        } else {
+            // set cursor depending on object underneath
+            if (self.tool == Canvas.tools.hand) {
+                if (self.objectDrag.dragging) {
+                    $("html").css("cursor", "move");
+                } else {
+                    var obj = self.getObjectUnderneath(self.mouse);
+                    if (obj == self.paper) {
+                        $("html").css("cursor", "default");
+                    } else if (obj == null) {
+                        $("html").css("cursor", "default");
+                    } else if (obj instanceof Circle || obj instanceof Triangle) {
+                        $("html").css("cursor", "default");
+                    }
+                }
+            }
+        }
+    }
+
+    mouseDown(e) {
+        var self = this;
+        if (e.which == 3) {
+            e.preventDefault();
+            return;
+        }
+
+        if (e.which == 2) {
+            if (self.tool == Canvas.tools.hand && !self.globalDrag.dragging) {
+                // init global drag
+                self.globalDrag.dragging = true;
+                self.globalDrag.x0 = self.mouse.x;
+                self.globalDrag.y0 = self.mouse.y;
+                self.globalDrag.offsetX0 = self.offset.x;
+                self.globalDrag.offsetY0 = self.offset.y;
+                $("html").css("cursor", "move");
+            }
+            return;
+        }
+
+        if (self.tool == Canvas.tools.hand) {
+            var obj = self.getObjectUnderneath(self.mouse);
+            if (obj != null) {
+                self.clickObject(obj);
+            } else {
+                self.deselect();
+            }
+        } else if (self.tool == Canvas.tools.circle) {
+            var x = (self.mouse.x / self.zoom) - self.offset.x;
+            var y = (self.mouse.y / self.zoom) - self.offset.y;
+            var c = new Circle(x, y, self.circles.radius, self);
+            self.objects.push(c);
+        } else if (self.tool == Canvas.tools.triangle) {
+            var x = (self.mouse.x / self.zoom) - self.offset.x;
+            var y = (self.mouse.y / self.zoom) - self.offset.y;
+            var t = new Triangle(x, y, 45, self.triangles.length, self.triangles.length, 0, self);
+            self.objects.push(t);
+        }
+    }
+
     bindEvents() {
         var self = this;
 
 
-        window.onresize = function() {
+        window.onresize = function () {
             self.resize();
         };
 
         this.resize();
 
         var handleMove = function (e) {
-            var rect = self.canvas.getBoundingClientRect();
-            self.mouse.x = (self.pdr) * (e.clientX - rect.left) - self.translation.x;
-            self.mouse.y = (self.pdr) * (e.clientY - rect.top) - self.translation.y;
-
-            if (self.objectDrag.dragging) {
-                var dx = (1 / self.zoom) * dragRatio * (self.objectDrag.x0 - self.mouse.x);
-                var dy = (1 / self.zoom) * dragRatio * (self.objectDrag.y0 - self.mouse.y);
-
-                for (var i = 0; i < self.selectedObjects.length; i++) {
-                    var obj = self.selectedObjects[i];
-                    obj.x = obj.x0 - dx;
-                    obj.y = obj.y0 - dy;
-                }
-
-                self.updateInspector();
-            }
-            if (self.globalDrag.dragging) {
-                // is dragging...?
-                var dx = (1 / self.zoom) * dragRatio * (self.globalDrag.x0 - self.mouse.x);
-                var dy = (1 / self.zoom) * dragRatio * (self.globalDrag.y0 - self.mouse.y);
-
-                self.offset.x = self.globalDrag.offsetX0 - dx;
-                self.offset.y = self.globalDrag.offsetY0 - dy;
-            } else {
-                // set cursor depending on object underneath
-                if (self.tool == Canvas.tools.hand) {
-                    if (self.objectDrag.dragging) {
-                        $("html").css("cursor", "move");
-                    } else {
-                        var obj = self.getObjectUnderneath(self.mouse);
-                        if (obj == self.paper) {
-                            $("html").css("cursor", "default");
-                        } else if (obj == null) {
-                            $("html").css("cursor", "default");
-                        } else if (obj instanceof Circle || obj instanceof Triangle) {
-                            $("html").css("cursor", "default");
-                        }
-                    }
-                }
-            }
+            self.mouseMove(e);
         }
 
         var handleLeave = function (e) {
@@ -179,42 +224,7 @@ class Canvas {
         }
 
         var handleDown = function (e) {
-            if (e.which == 3) {
-                e.preventDefault();
-                return;
-            }
-
-            if (e.which == 2) {
-                if (self.tool == Canvas.tools.hand && !self.globalDrag.dragging) {
-                    // init global drag
-                    self.globalDrag.dragging = true;
-                    self.globalDrag.x0 = self.mouse.x;
-                    self.globalDrag.y0 = self.mouse.y;
-                    self.globalDrag.offsetX0 = self.offset.x;
-                    self.globalDrag.offsetY0 = self.offset.y;
-                    $("html").css("cursor", "move");
-                }
-                return;
-            }
-
-            if (self.tool == Canvas.tools.hand) {
-                var obj = self.getObjectUnderneath(self.mouse);
-                if (obj != null) {
-                    self.clickObject(obj);
-                } else {
-                    self.deselect();
-                }
-            } else if (self.tool == Canvas.tools.circle) {
-                var x = (self.mouse.x / self.zoom) - self.offset.x;
-                var y = (self.mouse.y / self.zoom) - self.offset.y;
-                var c = new Circle(x, y, self.circles.radius, self);
-                self.objects.push(c);
-            } else if (self.tool == Canvas.tools.triangle) {
-                var x = (self.mouse.x / self.zoom) - self.offset.x;
-                var y = (self.mouse.y / self.zoom) - self.offset.y;
-                var t = new Triangle(x, y, 45, self.triangles.length, self.triangles.length, 0, self);
-                self.objects.push(t);
-            }
+            self.mouseDown(e);
         }
 
         var handleUp = function (e) {
@@ -232,8 +242,9 @@ class Canvas {
         this.canvas.addEventListener("mouseup", handleUp);
         this.canvas.addEventListener("mouseleave", handleLeave);
         this.canvas.addEventListener("wheel", handleWheel);
-        this.canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return false; });
-
+        this.canvas.addEventListener("contextmenu", function (e) { 
+            e.preventDefault(); return false; 
+        });
         this.canvas.addEventListener("keydown", function (e) {
             // console.log(e.key);
             e.preventDefault();
@@ -334,39 +345,39 @@ class Canvas {
 
             x: new FloatInput("ui-inspector", "inspector circle triangle", "x", 0, true, function (value) {
                 self.setInspectorAttr("x", value * Canvas.unit);
-            }),
+            }, ""),
 
             y: new FloatInput("ui-inspector", "inspector circle triangle", "y", 0, true, function (value) {
                 self.setInspectorAttr("y", value * Canvas.unit);
-            }),
+            }, ""),
 
             radius: new FloatInput("ui-inspector", "inspector circle circle-multi", "Radius", 0, true, function (value) {
                 self.setInspectorAttr("radius", value * Canvas.unit);
-            }),
+            }, ""),
 
             l1: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "l1", 0, true, function (value) {
                 self.setInspectorAttr("l1", value * Canvas.unit);
-            }),
+            }, ""),
 
             l2: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "l2", 0, true, function (value) {
                 self.setInspectorAttr("l2", value * Canvas.unit);
-            }),
+            }, ""),
 
             theta: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "theta", 0, false, function (value) {
                 self.setInspectorAttr("theta", value);
-            }),
+            }, "°"),
 
             rotation: new FloatInput("ui-inspector", "inspector triangle triangle-multi", "rotation", 0, false, function (value) {
                 self.setInspectorAttr("rotation", value);
-            }),
+            }, "°"),
 
             lock: new Checkbox("ui-inspector", "inspector circle triangle", "Lock", false, function (value) {
                 self.setInspectorAttr("locked", value);
             }),
         }
 
-        new Checkbox("ui-settings", "base", "Snap intersections", self.snap.enabled, function(value) {
-            self.snap.enabled = true;
+        new Checkbox("ui-settings", "base", "Snap intersections", self.snap.enabled, function (value) {
+            self.snap.enabled = value;
         });
 
         new Checkbox("ui-settings", "base", "Show paper", true, function (value) {
@@ -381,7 +392,7 @@ class Canvas {
             self.grid.show = value;
         });
 
-        new NumberInput("ui-settings", "base", "Grid denomination", this.grid.count, function(value) {
+        new NumberInput("ui-settings", "base", "Grid denomination", this.grid.count, function (value) {
             self.grid.count = value;
         })
 
@@ -397,14 +408,14 @@ class Canvas {
 
         new FloatInput("ui-circle-tool", "base", "Radius", 0.25, true, function (value) {
             self.circles.radius = value * Canvas.unit;
-        })
-        
+        }, "")
+
         new SlidingInput("ui-settings", "advanced", "Pixel density", this.pdr, 1, 4, 1, function (value) { return value; }, function (value) {
             self.pdr = value;
             self.resize();
         });
 
-        new Button("ui-settings", "base button-advanced", "Show advanced", function(){
+        new Button("ui-settings", "base button-advanced", "Show advanced", function () {
             $(".button-advanced").hide();
             $(".advanced").show();
         })
@@ -472,19 +483,21 @@ class Canvas {
             this.globalDrag.dragging = false;
         } else if (this.objectDrag.dragging) {
             // handle snap here
-            var objCoords = [];
-            for (var i = 0; i < this.selectedObjects.length; i++) {
-                objCoords.push(...this.selectedObjects[i].points());
-            }
-            var mp = minPair(objCoords, this.calculateSnapPoints());
-            var delta = mp.delta;
-            if (norm(delta) < this.snap.distance) {
+            if (this.snap.enabled) {
+                var objCoords = [];
                 for (var i = 0; i < this.selectedObjects.length; i++) {
-                    var obj = this.selectedObjects[i];
-                    obj.x += delta.x;
-                    obj.y += delta.y; 
+                    objCoords.push(...this.selectedObjects[i].points());
                 }
-                this.updateInspector();
+                var mp = minPair(objCoords, this.calculateSnapPoints());
+                var delta = mp.delta;
+                if (norm(delta) < this.snap.distance) {
+                    for (var i = 0; i < this.selectedObjects.length; i++) {
+                        var obj = this.selectedObjects[i];
+                        obj.x += delta.x;
+                        obj.y += delta.y;
+                    }
+                    this.updateInspector();
+                }
             }
 
             $("html").css("cursor", "default");
@@ -547,12 +560,25 @@ class Canvas {
             this.context.lineTo(this.mouse.x - 50, this.mouse.y + 50);
             this.context.lineTo(this.mouse.x, this.mouse.y - 50);
             this.context.stroke();
+        } else if (this.tool == Canvas.tools.hand) {
+            if (this.objectDrag.dragging && this.snap.enabled) {
+                var objCoords = [];
+                for (var i = 0; i < this.selectedObjects.length; i++) {
+                    objCoords.push(...this.selectedObjects[i].points());
+                }
+                var mp = minPair(objCoords, this.calculateSnapPoints());
+                var delta = mp.delta;
+                if (norm(delta) < this.snap.distance) {
+                    drawX(this.context, this.renderCoord(mp.snapCoord), 10);
+                }
+            }
         }
     }
 
     clickObject(obj) {
         if (obj instanceof Paper) {
             this.deselect();
+            console.log("Paper, no drag");
             return;
         }
 
@@ -592,6 +618,8 @@ class Canvas {
                 this.objectDrag.x0 = this.mouse.x;
                 this.objectDrag.y0 = this.mouse.y;
                 this.objectDrag.dragging = true;
+            } else {
+                console.log("locked no drag")
             }
         }
         this.updateInspector();
@@ -680,13 +708,13 @@ class Canvas {
         var pts = [];
 
         // corners
-        pts.push({x: 0, y: 0});
-        pts.push({x: Canvas.unit, y: Canvas.unit});
-        pts.push({x: Canvas.unit, y: 0});
-        pts.push({x: 0, y: Canvas.unit});
+        pts.push({ x: 0, y: 0 });
+        pts.push({ x: Canvas.unit, y: Canvas.unit });
+        pts.push({ x: Canvas.unit, y: 0 });
+        pts.push({ x: 0, y: Canvas.unit });
 
         if (this.paper.showDiagonals) {
-            pts.push({x: Canvas.unit / 2, y: Canvas.unit / 2})
+            pts.push({ x: Canvas.unit / 2, y: Canvas.unit / 2 })
         }
 
         // grid snap points
