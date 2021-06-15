@@ -16,6 +16,10 @@ class CanvasObject {
         return this.name_;
     }
 
+    setAttr(a, v) {
+        this[a] = v;
+    }
+
     copy() {
         return {};
     }
@@ -144,7 +148,7 @@ class Circle extends CanvasObject {
     }
 
     points() {
-        return [{x: this.x, y: this.y}]
+        return [{ x: this.x, y: this.y }]
     }
 
     copy() {
@@ -258,7 +262,7 @@ class Triangle extends Tile {
 
     static method = {
         SAS: "SAS",
-        COORDS: "Coords",
+        COORDS: "COORDS",
     }
 
     constructor(x, y, theta, l1, l2, rotation, canvas) {
@@ -431,7 +435,7 @@ class Triangle extends Tile {
                 c1: this.canvas.renderCoord(c1),
                 c2: this.canvas.renderCoord(c2),
                 c3: this.canvas.renderCoord(c3),
-                incenter: triangleCenter(c1, c2, c3),
+                incenter: this.canvas.renderCoord(triangleCenter(c1, c2, c3)),
             }
         }
 
@@ -487,6 +491,20 @@ class Triangle extends Tile {
         var c1 = pts.c1;
         var c2 = pts.c2;
         var c3 = pts.c3;
+
+        // if (this.method == Triangle.method.COORDS) {
+        //     var mp = minPair([coords], [c1, c2, c3]);
+        //     if (norm(mp.delta) < 20) {
+        //         return {
+        //             val: true,
+        //             coord: mp.snapCoord
+        //         }
+        //     } else {
+        //         return {
+        //             val: inBoundsTriangle(coords, c1, c2, c3),
+        //         }
+        //     }
+        // }
 
         return inBoundsTriangle(coords, c1, c2, c3);
     }

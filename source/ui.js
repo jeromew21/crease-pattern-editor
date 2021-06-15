@@ -140,6 +140,55 @@ class SlidingInput {
     }
 }
 
+class OptionInput {
+    static html(domId, value, label, labels, classes) {
+        var val = '<div class="' + classes + '"><label for="'
+            + domId
+            + '">' + label + ':&nbsp;</label>'
+            + '<select id="' + domId + '" name="' + domId + '">';
+
+        for (var i = 0; i < labels.length; i++) {
+            var selected = "";
+            if (labels[i] == value) {
+                selected = " selected";
+            }
+
+            val += '<option name="' + labels[i] + '"' + selected + '>' + labels[i] + '</option>'
+        }
+
+        val = val + '</select>'
+            + '</div>';
+        return val;
+    }
+
+    constructor(parentId, classes, label, labels, value, onChange) {
+        this.value = value;
+        this.onChange = onChange;
+        this.labels = labels;
+        this.label = label;
+
+        var self = this;
+
+        this.domId = "ui-" + label.replaceAll(" ", "-") + nDigitRand(3);
+        this.element = $(OptionInput.html(this.domId, this.value, this.label, this.labels, classes));
+
+        var parentElement = $("#" + parentId);
+        parentElement.append(this.element);
+        parentElement.on("change", "#" + this.domId, function (e) {
+            var val = $(e.target).val();
+            self.value = val;
+            self.onChange(val);
+        })
+
+        this.onChange(value);
+    }
+
+    set(value) {
+        this.value = value;
+        // $("#" + this.domId).val(value);
+    }
+}
+
 class StringInput {
     static html(domId, value, label, classes) {
         return '<div class="' + classes + '"><label for="'
@@ -214,7 +263,7 @@ class FloatInput {
             mul = ' * <select id="' + domId + '-sel"><option value=1 selected>1</option>';
             var primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
             for (var i = 0; i < 4; i++) {
-                mul += "<option value=" +  primes[i] + ">&#8730;" + primes[i] + "</option>";
+                mul += "<option value=" + primes[i] + ">&#8730;" + primes[i] + "</option>";
             }
 
             mul += '</select>';

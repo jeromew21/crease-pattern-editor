@@ -242,8 +242,8 @@ class Canvas {
         this.canvas.addEventListener("mouseup", handleUp);
         this.canvas.addEventListener("mouseleave", handleLeave);
         this.canvas.addEventListener("wheel", handleWheel);
-        this.canvas.addEventListener("contextmenu", function (e) { 
-            e.preventDefault(); return false; 
+        this.canvas.addEventListener("contextmenu", function (e) {
+            e.preventDefault(); return false;
         });
         this.canvas.addEventListener("keydown", function (e) {
             // console.log(e.key);
@@ -341,6 +341,10 @@ class Canvas {
         this.inspector = {
             name: new StringInput("ui-inspector", "inspector circle triangle", "Name", "", function (value) {
                 self.setInspectorAttr("name", value);
+            }),
+
+            triangleMethod: new OptionInput("ui-inspector", "inspector triangle triangle-multi", "method", ["SAS", "COORDS"], "SAS", function (value) {
+                alert(value);
             }),
 
             x: new FloatInput("ui-inspector", "inspector circle triangle", "x", 0, true, function (value) {
@@ -578,7 +582,7 @@ class Canvas {
     clickObject(obj) {
         if (obj instanceof Paper) {
             this.deselect();
-            console.log("Paper, no drag");
+            // console.log("Paper, no drag");
             return;
         }
 
@@ -618,8 +622,6 @@ class Canvas {
                 this.objectDrag.x0 = this.mouse.x;
                 this.objectDrag.y0 = this.mouse.y;
                 this.objectDrag.dragging = true;
-            } else {
-                console.log("locked no drag")
             }
         }
         this.updateInspector();
@@ -628,12 +630,14 @@ class Canvas {
     setInspectorAttr(attrName, value) {
         if (this.selectedObjects.length == 1) {
             var obj = this.selectedObjects[0];
-            obj[attrName] = value;
+            // obj[attrName] = value;
+            obj.setAttr(attrName, value);
         } else if (this.selectedObjects.length > 1 && allSameType(this.selectedObjects)) {
             // multi elements
             for (var i = 0; i < this.selectedObjects.length; i++) {
                 var obj = this.selectedObjects[i];
-                obj[attrName] = value;
+                // obj[attrName] = value;
+                obj.setAttr(attrName, value);
             }
         }
     }
